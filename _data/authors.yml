@@ -5,7 +5,7 @@ GyuhoonK :
   url:
   bio: 
                         # 회사정보
-  picture:    # author image
+  picture: assets/built/images/abraham.jpg # author image
   facebook:             # facebook ID
   twitter:              # twitter ID
   cover: False
