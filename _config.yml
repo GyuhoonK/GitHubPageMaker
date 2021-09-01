@@ -60,7 +60,7 @@ logo_dark:
 favicon: assets/built/images/favicon.jpg
 # favicon으로 사용할 image
 
-production_url: https://GyuhoonK.github.io
+production_url: https://gyuhoonk.github.io
 # 최종적으로 blog가 운영될 url
 
 source_url: https://github.com/GyuhoonK/GyuhoonK.github.io
