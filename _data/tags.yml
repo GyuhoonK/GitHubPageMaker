@@ -1,0 +1,12 @@
+python :
+  name: python
+  description: False
+  cover: #assets/built/images/background-frontend.jpg
+spark :
+  name: spark
+  description: False
+  cover: #assets/built/images/background-frontend.jpg
+scala :
+  name: scala
+  description: False
+  cover: #assets/built/images/background-frontend.jpg
