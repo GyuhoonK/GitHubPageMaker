@@ -63,7 +63,7 @@ favicon: assets/built/images/favicon.jpg
 production_url: https://gyuhoonk.github.io
 # 최종적으로 blog가 운영될 url
 
-source_url: https://github.com/GyuhoonK/GyuhoonK.github.io
+source_url: https://github.com/GyuhoonK/GitHubPageMaker/
 # blogmaker(jekyll source folder)에 대한 github repository
 
 # Social info

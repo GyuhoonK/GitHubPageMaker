@@ -10,3 +10,7 @@ scala :
   name: scala
   description: False
   cover: assets/built/images/scala-banner.png
+database :
+  name: database
+  description: False
+  cover: assets/built/images/database-banner.png
