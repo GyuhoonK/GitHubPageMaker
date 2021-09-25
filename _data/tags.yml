@@ -2,14 +2,14 @@ python :
   name: python
   description: False
   cover: assets/built/images/python-banner.png
-spark :
-  name: spark
+hadoop :
+  name: hadoop
   description: False
-  cover: assets/built/images/spark-banner.png
+  cover: assets/built/images/hadoop-banner.png
 scala :
   name: scala
   description: False
-  cover: assets/built/images/scala-banner.png
+  cover: assets/built/images/scala-banner-tag.png
 database :
   name: database
   description: False
