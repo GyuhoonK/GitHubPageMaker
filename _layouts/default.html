@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-
+    
     <!-- Document Settings -->
     <meta charset="utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
@@ -134,6 +134,9 @@
 
     <!-- Ghost outputs important scripts and data with this tag - it should always be the very last thing before the closing body tag -->
     <!-- ghost_foot -->
-
+    <!-- math LaTex-->
+    {% if page.use_math %}
+         {% include mathjax_support.html %}
+    {% endif %}
 </body>
 </html>

@@ -14,3 +14,7 @@ database :
   name: database
   description: False
   cover: assets/built/images/database-banner.png
+datascience :
+  name: datascience
+  description: False
+  cover: assets/built/images/data-science-banner.jpeg
