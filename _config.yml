@@ -6,7 +6,15 @@ excerpt_separator: "\n\n"
 incremental: false
 # kramdown : markdown의 개조판.
 # markdown에서 불편한 사항을 개선한 형태.
-
+kramdown:
+  input: GFM
+  hard_wrap: false
+  auto_ids: true
+  footnote_nr: 1
+  entity_output: as_char
+  toc_levels: 1..6
+  smart_quotes: lsquo,rsquo,ldquo,rdquo
+  enable_coderay: false
 # MyData
 owner:
   name:           GyuhoonK
