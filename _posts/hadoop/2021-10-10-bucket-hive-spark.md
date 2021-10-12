@@ -1,15 +1,17 @@
 ---
 layout: post
 current: post
-cover: assets/built/images/spark-banner.png
+cover: assets/built/images/bucket-banner.jpg
 navigation: True
-title: BUCKETTING HIVE on Tez, Spark on Yarn의 차이점
+title: Bucket in Hive, Spark
 date: 2021-10-09 22:30:00 +0900
 tags: [hadoop]
 class: post-template
 subclass: 'post tag-hadoop'
 author: GyuhoonK
 ---
+
+Hive와 Spark에서 Bucket 차이점에 대하여
 
 # Bucketting
 
@@ -76,18 +78,18 @@ hdfs dfs -ls /user/hive/warehouse/default.db/bucketed_tbl
 
 # Bucket in Spark(pyspark)
 
-Spark에서도 partition, bucket 기능을 제공합니다. 위 쿼리는 아래와 같은 의미를 지닙니다.
+Spark에서도 partition, bucket 기능을 제공합니다. 위에서 실행했던 HiveQL 쿼리는 아래 pyspark 코드와 같은 표면적으로는 같은 의미를 지닙니다. 즉 HiveQL이나 아래 pyspark 코드는 모두 1) External 2) Partition 3) Bucket 을 선언하고 있습니다.
 
 ```python
 source = spark.sql("SELECT * FROM 20211010_soucre")
 source.write\
-		  .format('parquet')\
-		  .partitionBy('p_date')\
-		  .bucketBy(32, 'name')\
-		  .sortBy('birthday')\
-		  .mode('append')\
-		  .option('path', '/user/hive/warehouse/default.db/buckted_tbl')\
-		  .saveAsTable('default.bucketed_tbl')
+      .format('parquet')\
+      .partitionBy('p_date')\
+      .bucketBy(32, 'name')\
+      .sortBy('birthday')\
+      .mode('append')\
+      .option('path', '/user/hive/warehouse/default.db/buckted_tbl')\
+      .saveAsTable('default.bucketed_tbl')
 ```
 
 32개의 bucket 파일이 생성될 것 같지만, 이렇게 저장한 경우에 매우 많은 parquet file이 생성된다는 겁니다.
@@ -108,7 +110,7 @@ hdfs dfs -ls /user/hive/warehouse/default.db/bucketed_tbl
 
 ![image](../../assets/built/images/hive-spark-bucket.png)
 
-위 그림처럼, Hive에서는 Reducer 하나가 하나의 bucket을 만드는데 비해, Spark에서는 각 task가 자신의 bucket을 만들고 이를 hdfs 상에 저장합니다.
+위 그림처럼, Hive에서는 Reducer 하나가 하나의 bucket을 만드는데 비해, Spark에서는 각 task가 자신의 bucket을 만들고 이를 테이블 경로(`path`)에 저장합니다.
 
 계산해보면 $$32 * 388 = 12416$$입니다. 즉, 388개의 task가 각각 bucket file을 생성하였기 때문에 위와 같이 12416개의 bucket file이 저장된 것입니다. 따라서 Spark를 통해 bucketting을 할 때는 이러한 부분에 주의해야합니다.
 
@@ -118,18 +120,18 @@ hdfs dfs -ls /user/hive/warehouse/default.db/bucketed_tbl
 
 더 큰 문제는 Hive Bucket과 Spark Bucket이 양립할 수 없다는 것입니다.
 
-## Spark를 통해 Bucketting된 테이블은 Hive에서 조회 불가능하다
+## Spark를 통해 생성된 Bucketed Table은 Hive에서 조회 불가능하다
 
 ```python
 source = spark.sql("SELECT * FROM 20211010_soucre")
 source.write\
-		  .format('parquet')\
-		  .partitionBy('p_date')\
-		  .bucketBy(32, 'name')\
-		  .sortBy('birthday')\
-		  .mode('append')\
-		  .option('path', '/user/hive/warehouse/default.db/buckted_tbl')\
-		  .saveAsTable('default.bucketed_tbl')
+      .format('parquet')\
+      .partitionBy('p_date')\
+      .bucketBy(32, 'name')\
+      .sortBy('birthday')\
+      .mode('append')\
+      .option('path', '/user/hive/warehouse/default.db/buckted_tbl')\
+      .saveAsTable('default.bucketed_tbl')
 ```
 
 pyspark로 위와 같이 적재에 성공하더라도, 테이블을 조회하는 쿼리를 실행할 경우 에러를 발생시킵니다.
@@ -145,8 +147,6 @@ hive -e "SELECT * FROM default.bucketed_tbl"
 
 1. 먼저 Bucketed Table을 생성하는 아래 쿼리를 실행합니다.
 
-   
-
    ```sql
    CREATE EXTERNAL TABLE bucketed_tbl -- EXTERNAL TABLE로 생성
    (name string, birthday timestamp) -- COLUMN을 선언, PARTITION으로 사용되는 COLUMN은 제외함
@@ -158,19 +158,19 @@ hive -e "SELECT * FROM default.bucketed_tbl"
    LOCATION '/user/hive/warehouse/default.db/bucketed_tbl' -- EXTERNAL TABLE의 저장 위치
    ;
    ```
-
-2. pyspark를 이용하여 Bucketed Table에 데이터를 적재합니다.
+   
+2. pyspark를 이용하여 Bucketed Table에 데이터를 append(INSERT)합니다.
 
    ```python
    source = spark.sql("SELECT * FROM 20211010_soucre")
    source.write\
-   		  .format('parquet')\
-   		  .partitionBy('p_date')\
-   		  .bucketBy(32, 'name')\
-   		  .sortBy('birthday')\
-   		  .mode('append')\
-   		  .option('path', '/user/hive/warehouse/default.db/buckted_tbl')\
-   		  .saveAsTable('default.bucketed_tbl')
+         .format('parquet')\
+         .partitionBy('p_date')\
+         .bucketBy(32, 'name')\
+         .sortBy('birthday')\
+         .mode('append')\
+         .option('path', '/user/hive/warehouse/default.db/buckted_tbl')\
+         .saveAsTable('default.bucketed_tbl')
    ```
 
    아래와 같은 에러 메시지를 확인할 수 있습니다.
@@ -180,20 +180,20 @@ hive -e "SELECT * FROM default.bucketed_tbl"
    It doesn't match the specified format 'ParquetFileFormat'.
    ```
 
-   HiveQL로 생성한 Buckted Table은 HiveFormat으로 저장되어 있어 ParquetFileFormat은 사용할 수 없다고 합닌다.
+   HiveQL로 생성한 Bucketed Table은 `HiveFormat`으로 저장되어 있어 `ParquetFileFormat` 으로 파일을 적재할 수 없다는 메시지입니다.
 
-3. 이번에는 HiveFormat으로 적재해보았습니다.
+3. 이번에는 `HiveFormat`으로 적재해보았습니다.
 
    ```python
    source = spark.sql("SELECT * FROM 20211010_soucre")
    source.write\
-   		  .format('hive')\
-   		  .partitionBy('p_date')\
-   		  .bucketBy(32, 'name')\
-   		  .sortBy('birthday')\
-   		  .mode('append')\
-   		  .option('path', '/user/hive/warehouse/default.db/buckted_tbl')\
-   		  .saveAsTable('default.bucketed_tbl')
+         .format('hive')\
+         .partitionBy('p_date')\
+         .bucketBy(32, 'name')\
+         .sortBy('birthday')\
+         .mode('append')\
+         .option('path', '/user/hive/warehouse/default.db/buckted_tbl')\
+         .saveAsTable('default.bucketed_tbl')
    ```
 
    이번에는 다른 에러 메시지가 확인됩니다.
@@ -202,7 +202,7 @@ hive -e "SELECT * FROM default.bucketed_tbl"
    Creating buckted Hive Serde table is not supported yet.
    ```
 
-   Spark가 아직 Bucketed Hive Serde를 생성하는 기능을 지원하지 않고 있다는 내용입니다. 제가 테스트에 사용했던 spark 버전은 2.3입니다.
+   Spark가 아직 `Bucketed Hive Serde`를 생성하는 기능을 지원하지 않고 있다는 내용입니다. 제가 테스트에 사용했던 spark 버전은 **2.3**입니다.
 
    현재는 3.0 이상의 버전이 릴리즈된 것으로 알고 있는데 현재 이 기능이 구현되었는지는 확인해보아야할 것 같습니다.
 

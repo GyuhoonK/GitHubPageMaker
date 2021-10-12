@@ -3,7 +3,7 @@ layout: post
 current: post
 cover: assets/built/images/hive-banner.png
 navigation: True
-title: hive table create
+title: CREATE query in Hive
 date: 2021-09-16 22:30:00 +0900
 tags: [hadoop]
 class: post-template
@@ -130,7 +130,7 @@ WHERE country = 'KOR';
 
 ```sql
 -- STATIC PARTITION
-INSERT INTO TABLE page_view(country='JPN')
+INSERT INTO TABLE page_view PARTITION (country='JPN')
 SELECT *
   FROM temp;
 -- 아래 디렉토리가 새로 생성됩니다
@@ -138,7 +138,7 @@ SELECT *
  
 -- DYNAMIC PARTITION
 set hive.exec.dynamic.partition.mode=nonstrict; -- dynamic partition 허용 
-INSERT INTO TABLE page_view(country)
+INSERT INTO TABLE page_view PARTITION (country)
 SELECT *
   FROM temp;
 -- country value에 따라 자동으로 디렉토리를 생성합니다
@@ -248,7 +248,12 @@ SerDe란 데이터 해석 방법을 말합니다. Serializer/Deserialaizer의 �
 파일 내 데이터(HDFS Files)에 접근한 이후, 해당 데이터를 테이블로 적재하기 위해 Deserialaizer를 이용하여 Row Format으로 변환합니다. 반대로, 쿼리 결과인 Row들은 Serializer를 이용하여 파일 포맷으로 변환하여 파일로 export합니다. 
 
 - HDFS files --> InputFileFormat --> [key, value] --> **Deserializer** --> Row object
+
 - Row object --> **Serializer** --> [key, value] --> OutputFileFormat --> HDFS files
+
+- ![images](../../assets/built/images/serde.png)
+
+  
 
 기본 제공되는 SerDe는 다음 7개 입니다.
 
@@ -488,3 +493,8 @@ SELECT * FROM q1;
 [https://wikidocs.net/book/2203](https://wikidocs.net/book/2203)
 
 [https://docs.aws.amazon.com/ko_kr/emr/latest/ReleaseGuide/EMR_Hive_Commands.html](https://docs.aws.amazon.com/ko_kr/emr/latest/ReleaseGuide/EMR_Hive_Commands.html)
+
+
+
+[https://www.educative.io/collection/page/6089575797620736/6248215343005696/6394690049933312](https://www.educative.io/collection/page/6089575797620736/6248215343005696/6394690049933312)
+

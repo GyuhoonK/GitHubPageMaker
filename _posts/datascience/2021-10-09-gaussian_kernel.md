@@ -14,6 +14,8 @@ author: GyuhoonK
 
 
 
+Gaussian Kernel(RBF) 기본 개념에 대하여
+
 # Gaussian Kernel ?
 
 Gaussian Kernel, 혹은 RBF(Radial Basis Function)라고도 불리우는 이 기법은 커널 함수(Kernel Function) 중 저차원에서 고차원으로 매핑시키는 기법(mapping function) 중 하나입니다. 특히, Gaussian Kernel은 데이터 사이의 거리를 무한차원 벡터공간에서 측정합니다.

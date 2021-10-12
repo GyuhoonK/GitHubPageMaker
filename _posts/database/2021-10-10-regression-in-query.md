@@ -1,7 +1,7 @@
 ---
 layout: post
 current: post
-cover: assets/built/images/python-sql.png
+cover: assets/built/images/regression-banner.png
 navigation: True
 title: Regression in Query
 date: 2021-10-09 22:30:00 +0900
