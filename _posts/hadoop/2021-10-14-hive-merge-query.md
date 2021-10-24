@@ -1,7 +1,7 @@
 ---
 layout: post
 current: post
-cover: assets/built/images/bucket-banner.jpg
+cover: assets/built/images/merge-files.svg
 navigation: True
 title: Merge Files in Hive
 date: 2021-10-13 22:30:00 +0900
@@ -45,7 +45,7 @@ HDFS에 저장하고자 하는 File이 Block Size(128MB)보다 작으면 이러�
 
 해당 파일은 500MB 짜리 파일 **하나**로 저장할 수도 있고, 50MB짜리 파일 **10개**로 저장할 수도 있습니다. 어떻게 저장하는 것이 더 효율적일까요?
 
-각 Block들이 모두 다른 DataNode에 저장되었다고 가정하고 비교해보겠습니다.
+비교 편의를 위해 각 Block들이 모두 다른 DataNode에 저장되었다고 가정하고 비교해보겠습니다.
 
 ## Case1 : only 1 File, Size is 500MB 
 
@@ -53,9 +53,7 @@ HDFS에 저장하고자 하는 File이 Block Size(128MB)보다 작으면 이러�
 
 ## Case2 : 10 Files, each Size is 50MB
 
-
-
-  <img src="../../assets/built/images/hdfs-case2.png" alt="image" style="zoom:150%;" />
+<img src="../../assets/built/images/hdfs-case2.png" alt="image" style="zoom:150%;" />
 
 File A를 Block Size인 128MB보다 작은 50MB 파일 10개로 쪼개서 저장할 경우, 위 그림처럼 각 10개 File은 각각 50MB 크기의 Block에 저장됩니다. 따라서, HDFS I/O 는 10번 발생하게됩니다. 또한, NameNode는 File A-1부터 File A-10까지 10개 파일에 대한 메타 데이터를 저장하게 됩니다.
 
@@ -63,16 +61,93 @@ File A를 Block Size인 128MB보다 작은 50MB 파일 10개로 쪼개서 저장
 
 위 그림을 간단하게 비교해보면 아래와 같습니다.
 
-|       | # HDFS I/O | # MetaData in NameNode |
-| ----- | ---------- | ---------------------- |
-| Case1 | 4          | 1                      |
-| Case2 | 10         | 10                     |
+|       | # HDFS I/O(Data Node) | # MetaData in NameNode |
+| ----- | --------------------- | ---------------------- |
+| Case1 | 4                     | 1                      |
+| Case2 | 10                    | 10                     |
 
-실제 경우에는, Case1의 경우 Block1과 Block2~Block4가 같은 DataNode에 저장되어 HDFS I/O가 더 낮아질 수 있습니다. 그런 효율성을 제외하더라도 HDFS I/O, meata data 저장의 측면에서 비교해 보았을 때 File을 Block Size보다 큰 용량으로 저장하는 Case1이 더 효율적인 것으로 보입니다.
-
-반대로, 우리는 Block Size보다 작은 파일이 저장되는 것을 지양해야함을 알 수 있습니다.
+비교를 위해 모든 Block이 다른  Data Node에 저장되어 있다고 가정했지만, 실제 상황에서는 하나의 Data Node에 여러 Block이 저장될 수 있기 때문에  HDFS I/O는 위 수치보다 낮을 것입니다. 즉, 위 상황처럼 모든 Block이 각기 다른 Data Node에 저장된 상황은 최악의 경우라고 생각하시면 됩니다. 그러나 이러한 가정을 제거하더라도 Block Access는 Case1과 Case2가 각각 4,10으로 변함 없을 것입니다. 따라서 우리는 Block Size보다 작은 파일이 저장되는 것을 지양해야함을 알 수 있습니다.
 
 # When is File size Less than Block size ?
+
+그러면 File Size가 128MB보다 작게 저장되는 경우는 왜 그리고 언제 발생하는 것일까요? 이는 Tez, Yarn 스케쥴러의 동작 원리와 관련 있습니다.
+
+![image](../../assets/built/images/hql-on-tez.png)
+
+위 그림처럼, Tez를 이용한 HQL 구문은 최종적으로 Reducer에서 결과를 종합하여 output을 내놓습니다. 그렇다면 File 1개만 나와야하는 것 아닌가? 라고 생각할 수 있지만, 할당 받은 자원 내에서 사용 가능한 여러 개의 Ruducer를 생성하여 작업을 실행하게 되고 각 Reducer들이 처리한 결과를 HDFS에 저장합니다. 이 과정에서 각각의 Reducer가 처리하는 데이터의 양이 적다면, output size가 block size보다 적은 file을 write할 수도 있게 됩니다.
+
+Spark의 file 개수는 기본적으로 다른 옵션을 지정하지 않는다면  `spark.default.parallelism` 에 의해 결정됩니다.
+
+> [default]
+>
+> For distributed shuffle operations like `reduceByKey` and `join`, the largest number of partitions in a parent RDD. For operations like `parallelize` with no parent RDDs, it depends on the cluster manager:
+>
+> - Local mode: number of cores on the local machine
+>
+> - Mesos fine grained mode: 8
+>
+> - Others: total number of cores on all executor nodes or 2, whichever is larger
+>
+> [meaning]
+>
+> Default number of partitions in RDDs returned by transformations like `join`, `reduceByKey`, and `parallelize` when not set by user.
+
+ yarn의 Others에 해당하므로, (executor 개수) * (core 개수)만큼 파일을 저장할 것입니다.
+
+
+
+# How to Merge?
+
+그렇다면 이처럼 비효율적으로 저장된 File을 하나의 Block으로 저장하는 방법을 알아보겠습니다.
+
+##  HQL case
+
+reducer 개수를 조정하거나, Tez에게 File write 조건을 지정할 수 있습니다.
+
+```sql
+-- case1) Reducer 개수 조정
+set mapred.reduce.tasks=1;
+
+-- case2) hive.merge 옵션 부여
+set hive.merge.mapfiles=true; -- Map 결과 파일에 대해 merge를 허용
+set hive.merge.mapredfiles=true; -- MapReducer 결과 파일에 대해 merge를 허용
+set hive.merge.size.per.task=128000000; -- 128MB의 file로  merge
+set hive.merge.smallfiles.avgsize=128000000; -- 128MB 이하의 small file들을 merge 대상으로 지정
+```
+
+ 
+
+## Spark case
+
+`repartition`, `coalesce`  를 통해 output file의 개수를 조정할 수 있습니다.
+
+`repartition` 은 shuffle을 수행하여 RDD를 재조정해주는데 비해,  `coalesce` 는 shuffle을 수행하지 않고 지정된 개수의 `partition`으로 조정합니다.
+
+그럼  `partition`이 무엇이냐?를 알아야 이 원리를 이해할 수 있을 것 같습니다.
+
+`partition` 이란 spark 내에서 task가 처리하는 데이터의 단위를 의미합니다. `RDD`(혹은 이들로 이루어진 `DataFrame`)는 여러 개의 `partition`으로 이루어져있고, 하나의 task가 하나의 `partition`을 담당하여 작업을 수행합니다.
+
+이러한 `partition`은 3개로 분류됩니다.
+
+| partition         | configuration                     |
+| ----------------- | --------------------------------- |
+| Input Partition   | spark.sql.files.maxPartitionBytes |
+| Output Partition  | repartition, coalesce             |
+| Shuffle Partition | spark.sql.shuffle.partitions      |
+
+이 중에 Output Partition을 조정하여, 파일 개수를 적절히 조절해줍니다.` repartition`은 `RDD, DataSet, DataFrame`과 같은 객체 내부의 `partition`에 저장될 데이터를 재조정해주는 역할을 합니다. 이때 **shuffle**을 통해, 해당 객체 내부의 데이터들을 재분배하게 됩니다. 이에 비해  `coalesce`는 현재 `partition` 개수보다 적게 만드는 것이 목적이므로, 재조정하지 않고(**shuffle 하지 않고**), partition에 존재하는 데이터를 단순히 다른 partition에 욱여 넣는 작업입니다.
+
+따라서 output partition을 적절히 사용하여, output file size가 128MB 이하가 되지 않도록 조정한 뒤, 저장하면 됩니다. 아래 예시 코드를 남기며 글을 마치겠습니다.
+
+```python
+df = spark.sql("SELECT id, grade FROM student")
+
+df.coalesce(1)\
+.write.mode('append')\
+.saveAsTable("test_table")
+```
+
+
 
 
 
@@ -85,3 +160,5 @@ File A를 Block Size인 128MB보다 작은 50MB 파일 10개로 쪼개서 저장
 [https://www.hdfstutorial.com/hdfs-architecture/block-replication-in-hadoop/](https://www.hdfstutorial.com/hdfs-architecture/block-replication-in-hadoop/)
 
 [https://forum.huawei.com/enterprise/en/fi-components-relationship-between-spark-and-hdfs/thread/606704-893](https://forum.huawei.com/enterprise/en/fi-components-relationship-between-spark-and-hdfs/thread/606704-893)
+
+[https://tech.kakao.com/2021/10/08/spark-shuffle-partition/](https://tech.kakao.com/2021/10/08/spark-shuffle-partition/)
