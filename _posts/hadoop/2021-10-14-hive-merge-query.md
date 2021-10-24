@@ -70,13 +70,48 @@ File A를 Block Size인 128MB보다 작은 50MB 파일 10개로 쪼개서 저장
 
 # When is File size Less than Block size ?
 
-그러면 File Size가 128MB보다 작게 저장되는 경우는 왜 그리고 언제 발생하는 것일까요? 이는 Tez, Yarn 스케쥴러의 동작 원리와 관련 있습니다.
+그러면 File Size가 128MB보다 작게 저장되는 경우(small file issue)는 왜 그리고 언제 발생하는 것일까요? 이는 Tez, Yarn 스케쥴러의 동작 원리와 관련 있습니다.
+
+```sql
+-- HiveQL 예시 
+SELECT a.vendor,
+       COUNT(*),
+       AVG(c.cost) 
+FROM a JOIN b 
+ON (a.id = b.id) 
+	     JOIN c 
+ON (a.itemid = c.itemid) 
+GROUP BY a.vendor
+;
+-- 위 쿼리는 아래 Tez DAG에 따라 수행됩니다
+```
+
+
 
 ![image](../../assets/built/images/hql-on-tez.png)
 
-위 그림처럼, Tez를 이용한 HQL 구문은 최종적으로 Reducer에서 결과를 종합하여 output을 내놓습니다. 그렇다면 File 1개만 나와야하는 것 아닌가? 라고 생각할 수 있지만, 할당 받은 자원 내에서 사용 가능한 여러 개의 Ruducer를 생성하여 작업을 실행하게 되고 각 Reducer들이 처리한 결과를 HDFS에 저장합니다. 이 과정에서 각각의 Reducer가 처리하는 데이터의 양이 적다면, output size가 block size보다 적은 file을 write할 수도 있게 됩니다.
+Tez engine은 Map-Reduce 이후 작업을 HDFS에 저장하지 않고(HDFS I/O를 발생시키지 않고), in-memory 상에서 다음 작업을 진행한다는 점입니다. 이를 위해 DAG를 미리 생성하는 등의 선행 작업을 실행합니다. 위 그림은 Tez가 이러한 작업을 위해 DAG를 생성하고, HDFS IO없이 Reducer를 통해 쿼리를 실행하는 과정을 설명해줍니다. 
 
-Spark의 file 개수는 기본적으로 다른 옵션을 지정하지 않는다면  `spark.default.parallelism` 에 의해 결정됩니다.
+위 도식 대로 INSERT 쿼리가 수행된다면, small file은 등장하지 않아야 하는 것 아닐까요? 
+
+하지만, INSERT는 Mapper만 동작하는 작업입니다(mapper-only).
+
+```sql
+INSERT INTO outputtable -- 아래 쿼리 실행 결과에 대해서 Mapper만 동작하여 file write
+SELECT a.vendor,
+       COUNT(*),
+       AVG(c.cost) 
+FROM a JOIN b 
+ON (a.id = b.id) 
+	     JOIN c 
+ON (a.itemid = c.itemid) 
+GROUP BY a.vendor
+;
+```
+
+위 INSERT문은 Reducer를 거치지 않기 때문에 읽어들여온 파일 개수만큼 디렉토리에 그대로 저장하게 되고, 이는 file number가 급격하게 늘어나는 결과를 초래하게 됩니다. 
+
+Spark는 file write 작업을 partition 단위로 수행하게 됩니다. 따라서, Spark를 저장된 ouput file 개수는 기본적으로 다른 옵션(아래서 다루게 될 `repartition, coalesce`)을 지정하지 않는다면 partition 개수를 결정하는 `spark.default.parallelism` 에 의해 결정됩니다.
 
 > [default]
 >
@@ -92,7 +127,7 @@ Spark의 file 개수는 기본적으로 다른 옵션을 지정하지 않는다�
 >
 > Default number of partitions in RDDs returned by transformations like `join`, `reduceByKey`, and `parallelize` when not set by user.
 
- yarn의 Others에 해당하므로, (executor 개수) * (core 개수)만큼 파일을 저장할 것입니다.
+Spark on yarn은 Others에 해당하므로 default 값을 따르는 경우에는 (executor 개수) * (core 개수)만큼 파일을 저장할 것입니다. write해야하는 전체 데이터 크기가 충분히 크다면 이는 문제되지 않을 수 있으나, 전체 데이터 크기가 작아지는 경우에는 HiveQL에서 살펴보았던 것처럼 small file이 발생하게 됩니다. 
 
 
 
@@ -100,22 +135,60 @@ Spark의 file 개수는 기본적으로 다른 옵션을 지정하지 않는다�
 
 그렇다면 이처럼 비효율적으로 저장된 File을 하나의 Block으로 저장하는 방법을 알아보겠습니다.
 
-##  HQL case
+##  HiveQL case
 
-reducer 개수를 조정하거나, Tez에게 File write 조건을 지정할 수 있습니다.
+널리 알려져있고 간단한 방법은 `hive.merge` 조건을 설정하여 file write 단계에서 small file들을 병합시키도록 강제할 수 있습니다. 
 
 ```sql
--- case1) Reducer 개수 조정
-set mapred.reduce.tasks=1;
-
--- case2) hive.merge 옵션 부여
+-- hive.merge 옵션 부여
 set hive.merge.mapfiles=true; -- Map 결과 파일에 대해 merge를 허용
 set hive.merge.mapredfiles=true; -- MapReducer 결과 파일에 대해 merge를 허용
 set hive.merge.size.per.task=128000000; -- 128MB의 file로  merge
 set hive.merge.smallfiles.avgsize=128000000; -- 128MB 이하의 small file들을 merge 대상으로 지정
 ```
 
- 
+INSERT가 Mapper-Only Task라는 점에 착안한다면, Reducer 작업을 추가해줌으로써 small file 문제를 해결할 수도 있습니다.
+
+```sql
+INSERT INTO outputtable -- 아래 쿼리 실행 결과에 대해서 Mapper만 동작하여 file write
+SELECT a.vendor,
+       COUNT(*),
+       AVG(c.cost) 
+FROM a JOIN b 
+ON (a.id = b.id) 
+	     JOIN c 
+ON (a.itemid = c.itemid) 
+GROUP BY a.vendor
+SORT BY a.vendor -- SORT BY가 추가됨으로써 해당 쿼리는 Reducer가 추가됩니다.
+;
+```
+
+두 방법을 동시에 사용한다면 더 높은 효율을 보이게 됩니다. Reducer를 거친 결과를 merge하는 것이 file read만 수행한 mapper-only에 비해 merge해야할 파일 개수가 적기 때문입니다. (다른 말로 하면 이미 어느 정도 수준의 merge를 거쳤다는 의미입니다)
+
+```sql
+set hive.merge.mapfiles=true; -- Map 결과 파일에 대해 merge를 허용
+set hive.merge.mapredfiles=true; -- MapReducer 결과 파일에 대해 merge를 허용
+set hive.merge.size.per.task=128000000; -- 128MB의 file로  merge
+set hive.merge.smallfiles.avgsize=128000000; -- 128MB 이하의 small file들을 merge 대상으로 지정
+
+INSERT INTO outputtable -- 아래 쿼리 실행 결과에 대해서 Mapper만 동작하여 file write
+SELECT a.vendor,
+       COUNT(*),
+       AVG(c.cost) 
+FROM a JOIN b 
+ON (a.id = b.id) 
+	     JOIN c 
+ON (a.itemid = c.itemid) 
+GROUP BY a.vendor
+SORT BY a.vendor -- SORT BY가 추가됨으로써 해당 쿼리는 Reducer가 추가됩니다.
+;
+-- 1) SORT BY에 의해 먼저 Reducer 작업을 한번 수행한 다음
+-- 2) hive.merge가 동작하게 됩니다
+```
+
+
+
+
 
 ## Spark case
 
@@ -123,7 +196,7 @@ set hive.merge.smallfiles.avgsize=128000000; -- 128MB 이하의 small file들을
 
 `repartition` 은 shuffle을 수행하여 RDD를 재조정해주는데 비해,  `coalesce` 는 shuffle을 수행하지 않고 지정된 개수의 `partition`으로 조정합니다.
 
-그럼  `partition`이 무엇이냐?를 알아야 이 원리를 이해할 수 있을 것 같습니다.
+그럼  `partition`이 무엇인지를 알아야 이 원리를 이해할 수 있을 것 같습니다.
 
 `partition` 이란 spark 내에서 task가 처리하는 데이터의 단위를 의미합니다. `RDD`(혹은 이들로 이루어진 `DataFrame`)는 여러 개의 `partition`으로 이루어져있고, 하나의 task가 하나의 `partition`을 담당하여 작업을 수행합니다.
 
@@ -135,15 +208,15 @@ set hive.merge.smallfiles.avgsize=128000000; -- 128MB 이하의 small file들을
 | Output Partition  | repartition, coalesce             |
 | Shuffle Partition | spark.sql.shuffle.partitions      |
 
-이 중에 Output Partition을 조정하여, 파일 개수를 적절히 조절해줍니다.` repartition`은 `RDD, DataSet, DataFrame`과 같은 객체 내부의 `partition`에 저장될 데이터를 재조정해주는 역할을 합니다. 이때 **shuffle**을 통해, 해당 객체 내부의 데이터들을 재분배하게 됩니다. 이에 비해  `coalesce`는 현재 `partition` 개수보다 적게 만드는 것이 목적이므로, 재조정하지 않고(**shuffle 하지 않고**), partition에 존재하는 데이터를 단순히 다른 partition에 욱여 넣는 작업입니다.
+이 중에 Output Partition을 조정하여, 파일 개수를 적절히 조절해줍니다. ` repartition`은  `RDD, DataSet, DataFrame`과 같은 객체 내부의 `partition`에 저장될 데이터를 재조정해주는 역할을 합니다. 이때 **shuffle**을 통해, 해당 객체 내부의 데이터들을 재분배하게 됩니다. 이에 비해  `coalesce`는 현재  `partition` 개수보다 적게 만드는 것이 목적이므로, 재조정하지 않고(**shuffle 하지 않고**), partition에 존재하는 데이터를 단순히 다른 partition에 욱여 넣는 작업입니다.
 
-따라서 output partition을 적절히 사용하여, output file size가 128MB 이하가 되지 않도록 조정한 뒤, 저장하면 됩니다. 아래 예시 코드를 남기며 글을 마치겠습니다.
+따라서 Output Partition을 적절히 사용하여, output file size가 128MB 이하가 되지 않도록 조정하여 저장하면 됩니다. 아래 예시 코드를 남기며 글을 마치겠습니다.
 
 ```python
 df = spark.sql("SELECT id, grade FROM student")
 
 df.coalesce(1)\
-.write.mode('append')\
+.write.mode("append")\
 .saveAsTable("test_table")
 ```
 
@@ -162,3 +235,9 @@ df.coalesce(1)\
 [https://forum.huawei.com/enterprise/en/fi-components-relationship-between-spark-and-hdfs/thread/606704-893](https://forum.huawei.com/enterprise/en/fi-components-relationship-between-spark-and-hdfs/thread/606704-893)
 
 [https://tech.kakao.com/2021/10/08/spark-shuffle-partition/](https://tech.kakao.com/2021/10/08/spark-shuffle-partition/)
+
+[https://docs.cloudera.com/best-practices/latest/impala-performance/topics/bp-impala-avoiding-small-files.html](https://docs.cloudera.com/best-practices/latest/impala-performance/topics/bp-impala-avoiding-small-files.html)
+
+[https://118k.tistory.com/750](https://118k.tistory.com/750)
+
+[https://3months.tistory.com/536](https://3months.tistory.com/536)
