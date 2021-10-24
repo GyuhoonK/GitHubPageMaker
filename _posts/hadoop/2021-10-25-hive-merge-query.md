@@ -3,15 +3,15 @@ layout: post
 current: post
 cover: assets/built/images/merge-files.svg
 navigation: True
-title: Merge Files in Hive
-date: 2021-10-13 22:30:00 +0900
+title: Merge Files in HDFS
+date: 2021-10-24 22:30:00 +0900
 tags: [hadoop]
 class: post-template
 subclass: 'post tag-hadoop'
 author: GyuhoonK
 ---
 
-Hive에서 작은 용량의 파일들을 하나의 파일로 합치기
+HDFS에서 작은 용량의 파일들을 하나의 파일로 합치기
 
 # Blocks in HDFS
 
