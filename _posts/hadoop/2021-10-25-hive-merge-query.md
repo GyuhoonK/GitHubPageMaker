@@ -111,23 +111,11 @@ GROUP BY a.vendor
 
 위 INSERT문은 Reducer를 거치지 않기 때문에 읽어들여온 파일 개수만큼 디렉토리에 그대로 저장하게 되고, 이는 file number가 급격하게 늘어나는 결과를 초래하게 됩니다. 
 
-Spark는 file write 작업을 partition 단위로 수행하게 됩니다. 따라서, Spark를 저장된 ouput file 개수는 기본적으로 다른 옵션(아래서 다루게 될 `repartition, coalesce`)을 지정하지 않는다면 partition 개수를 결정하는 `spark.default.parallelism` 에 의해 결정됩니다.
+Spark는 file write 작업을 partition 단위로 수행하게 됩니다. 따라서, Spark를 저장된 ouput file 개수는 기본적으로 다른 옵션(아래서 다루게 될 `repartition, coalesce`)을 지정하지 않는다면 partition 개수를 결정하는 `spark.sql.shuffle.partitions` 에 의해 결정됩니다.
 
-> [default]
+> [default] 200
 >
-> For distributed shuffle operations like `reduceByKey` and `join`, the largest number of partitions in a parent RDD. For operations like `parallelize` with no parent RDDs, it depends on the cluster manager:
->
-> - Local mode: number of cores on the local machine
->
-> - Mesos fine grained mode: 8
->
-> - Others: total number of cores on all executor nodes or 2, whichever is larger
->
-> [meaning]
->
-> Default number of partitions in RDDs returned by transformations like `join`, `reduceByKey`, and `parallelize` when not set by user.
-
-Spark on yarn은 Others에 해당하므로 default 값을 따르는 경우에는 (executor 개수) * (core 개수)만큼 파일을 저장할 것입니다. write해야하는 전체 데이터 크기가 충분히 크다면 이는 문제되지 않을 수 있으나, 전체 데이터 크기가 작아지는 경우에는 HiveQL에서 살펴보았던 것처럼 small file이 발생하게 됩니다. 
+> [meaning] **The default number of partitions** to use when shuffling data for joins or aggregations. Note: For structured streaming, this configuration cannot be changed between query restarts from the same checkpoint location.
 
 
 
@@ -177,7 +165,7 @@ SELECT a.vendor,
        AVG(c.cost) 
 FROM a JOIN b 
 ON (a.id = b.id) 
-	     JOIN c 
+       JOIN c 
 ON (a.itemid = c.itemid) 
 GROUP BY a.vendor
 SORT BY a.vendor -- SORT BY가 추가됨으로써 해당 쿼리는 Reducer가 추가됩니다.
@@ -208,7 +196,7 @@ SORT BY a.vendor -- SORT BY가 추가됨으로써 해당 쿼리는 Reducer가 �
 | Output Partition  | repartition, coalesce             |
 | Shuffle Partition | spark.sql.shuffle.partitions      |
 
-이 중에 Output Partition을 조정하여, 파일 개수를 적절히 조절해줍니다. ` repartition`은  `RDD, DataSet, DataFrame`과 같은 객체 내부의 `partition`에 저장될 데이터를 재조정해주는 역할을 합니다. 이때 **shuffle**을 통해, 해당 객체 내부의 데이터들을 재분배하게 됩니다. 이에 비해  `coalesce`는 현재  `partition` 개수보다 적게 만드는 것이 목적이므로, 재조정하지 않고(**shuffle 하지 않고**), partition에 존재하는 데이터를 단순히 다른 partition에 욱여 넣는 작업입니다.
+이 중에 Output Partition을 조정하여, 파일 개수를 적절히 조절해줍니다.  `repartition` 은   RDD, DataSet, DataFrame과 같은 객체 내부의 partition에 저장될 데이터를 재조정해주는 역할을 합니다. 이때 **shuffle**을 통해, 해당 객체 내부의 데이터들을 재분배하게 됩니다. 이에 비해  `coalesce`는 현재  partition 개수보다 적게 만드는 것이 목적이므로, 재조정하지 않고(**shuffle 하지 않고**), partition에 존재하는 데이터를 단순히 다른 partition에 욱여 넣는 작업입니다.
 
 따라서 Output Partition을 적절히 사용하여, output file size가 128MB 이하가 되지 않도록 조정하여 저장하면 됩니다. 아래 예시 코드를 남기며 글을 마치겠습니다.
 
