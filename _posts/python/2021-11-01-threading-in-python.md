@@ -122,7 +122,7 @@ Context Switching이 정말 운 좋게도, 항상 Write가 끝난 뒤에 발생�
 
 ④ Update : Thread A의 동작과 마찬가지로 `g_count` 에 1을 더하기 위해, register에 1을 더합니다.
 
-⑤ Write : Context Switching이 발생하여 Thread A가 다시 실행됩니다. PCB에서 register값을 읽어들여옵니다(`register = 1`). 이제 register의 값을 `g_count` 에 적어야합니다. Thread B에 의해 업데이트된 현재 register 값은 1이므로 `g_count`는 1이 더해졌습니다. `g_count = 1`
+⑤ Write : Context Switching이 발생하여 Thread A가 다시 실행됩니다. PCB에서 register값을 읽어들여옵니다(`register = 1`). 이제 register의 값을 `g_count` 에 적어야합니다. PCB에서 읽어온 현재 register 값은 1이므로 `g_count`는 1이 더해졌습니다. (`g_count = 1`)
 
 ⑥ Read : 다음 작업을 위해 다시 `g_count` 값을 register에 등록합니다.
 
