@@ -21,4 +21,4 @@ datascience :
 algorithm :
   name: algorithm
   description: False
-  cover: assets/built/images/data-science-banner.jpeg
+  # cover: assets/built/images/data-science-banner.jpeg
