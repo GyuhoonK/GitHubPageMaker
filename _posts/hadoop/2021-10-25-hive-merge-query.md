@@ -111,11 +111,15 @@ GROUP BY a.vendor
 
 위 INSERT문은 Reducer를 거치지 않기 때문에 읽어들여온 파일 개수만큼 디렉토리에 그대로 저장하게 되고, 이는 file number가 급격하게 늘어나는 결과를 초래하게 됩니다. 
 
-Spark는 file write 작업을 partition 단위로 수행하게 됩니다. 따라서, Spark를 저장된 ouput file 개수는 기본적으로 다른 옵션(아래서 다루게 될 `repartition, coalesce`)을 지정하지 않는다면 partition 개수를 결정하는 `spark.sql.shuffle.partitions` 에 의해 결정됩니다.
+Spark는 file write 작업을 partition 단위로 수행하게 됩니다. 따라서, Spark를 저장된 ouput file 개수는 기본적으로 다른 옵션(아래서 다루게 될 `repartition, coalesce`)을 지정하지 않는다면 partition 개수를 결정하는 `spark.default.parallelism` 에 의해 결정됩니다.
 
-> [default] 200
+> [default] For distributed shuffle operations like `reduceByKey`and `join`, the largest number of partitions in a parent RDD. For operations like `parallelize`with no parent RDDs, it depends on the cluster manager:
 >
-> [meaning] **The default number of partitions** to use when shuffling data for joins or aggregations. Note: For structured streaming, this configuration cannot be changed between query restarts from the same checkpoint location.
+> - Local mode: number of cores on the local machine
+> - Mesos fine grained mode: 8
+> - **Others: total number of cores on all executor nodes or 2, whichever is larger**
+>
+> [meaning] **Default number of partitions** in RDDs returned by transformations like `join`, `reduceByKey`, and `parallelize` when not set by user.
 
 
 
