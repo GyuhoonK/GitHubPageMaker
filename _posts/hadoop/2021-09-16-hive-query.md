@@ -9,7 +9,6 @@ tags: [hadoop]
 class: post-template
 subclass: 'post tag-hadoop'
 author: GyuhoonK
-
 ---
 
 HiveQL - CREATE QUERY 구조에 대하여
