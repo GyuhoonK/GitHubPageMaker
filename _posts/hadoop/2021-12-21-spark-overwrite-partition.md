@@ -13,8 +13,6 @@ author: GyuhoonK
 
 Spark를 이용하여 특정 파티션만 overwrite하기
 
-
-
 # Partitioned Table in Hive
 
 Hive에서  파티셔닝을 이용하는 가장 큰 이유 중 하나는 쿼리 성능 향상입니다. HDFS 상에서 partition column을 기준으로 각각 다른 디렉토리에 저장되므로 쿼리 조회 시 조회가 필요 없는 파일은 조회를 수행하지 않으므로, 쿼리 성능이 향상될 수 있습니다.
@@ -24,51 +22,37 @@ Hive에서  파티셔닝을 이용하는 가장 큰 이유 중 하나는 쿼리 
 ```python
 df = pd.DataFrame(data={'col1' : ['a','b','c'], 'col2':['apple','banana','car']})
 df
-```
-```
 |    | col1   | col2   |
 |---:|:-------|:-------|
 |  0 | a      | apple  |
 |  1 | b      | banana |
 |  2 | c      | car    |
-```
 
-
-```python
 sdf = spark.createDataFrame(df)
 sdf.show()
-```
++----+------+
+|col1|  col2|
++----+------+
+|   a| apple|
+|   b|banana|
+|   c|   car|
++----+------+
 
-    +----+------+
-    |col1|  col2|
-    +----+------+
-    |   a| apple|
-    |   b|banana|
-    |   c|   car|
-    +----+------+
-
-
-```python
 schema, table = 'default.t_test'.split('.')
 sdf.write.mode('append')\
     .partitionBy("col1")\
     .option("path", f'/user/hive/warehouse/{schema}.db/{table}')\
     .saveAsTable(f"{schema}.{table}")
-```
-
-
-```python
+    
 spark.sql(f"SELECT * FROM {schema}.{table}").show()
++------+----+
+|  col2|col1|
++------+----+
+|banana|   b|
+| apple|   a|
+|   car|   c|
++------+----+
 ```
-
-    +------+----+
-    |  col2|col1|
-    +------+----+
-    |banana|   b|
-    | apple|   a|
-    |   car|   c|
-    +------+----+
-
 `default.t_test`  테이블은 아래와 같은 구조로 저장됩니다.
 
 ```shell
@@ -112,25 +96,18 @@ Spark에서는 Partition Overwrite를 어떻게 구현할 수 있을까요?
 ```python
 a_art_df = pd.DataFrame(data={'col1' : ['a'], 'col2':['art']})
 a_art_df
-```
-
-```
 |    | col1   | col2   |
 |---:|:-------|:-------|
 |  0 | a      | art    |
-```
 
-
-```python
 a_art_sdf = spark.createDataFrame(a_art_df)
 a_art_sdf.show()
++----+----+
+|col1|col2|
++----+----+
+|   a| art|
++----+----+
 ```
-
-    +----+----+
-    |col1|col2|
-    +----+----+
-    |   a| art|
-    +----+----+
 
 이제 `a_art_sdf`를 `default.t_test`에 `saveAsTable`을 이용하여 `overwrite`해보겠습니다. 
 
@@ -140,18 +117,14 @@ a_art_sdf.write.mode('overwrite')\
     .partitionBy("col1")\
     .option("path", f'/user/hive/warehouse/{schema}.db/{table}')\
     .saveAsTable(f"{schema}.{table}")
-```
-
-
-```python
+    
 spark.sql(f"SELECT * FROM {schema}.{table}").show()
++----+----+
+|col2|col1|
++----+----+
+| art|   a|
++----+----+
 ```
-
-    +----+----+
-    |col2|col1|
-    +----+----+
-    | art|   a|
-    +----+----+
 
 실행 결과 다른 파티션(`col1=b`, `col2=c`)이 모두 삭제되고 `col1=a` 파티션만 남았음을 확인할 수 있습니다.
 
@@ -173,21 +146,17 @@ Spark의 `DataFrame`을 테이블로 저장하는 다른 메소드에 `insertInt
 a_art_sdf.write.mode('overwrite')\
     .format('parquet')\
     .insertInto(f"{schema}.{table}")
-```
-
-
-```python
+    
 spark.sql(f"SELECT * FROM {schema}.{table}").show()
++------+----+
+|  col2|col1|
++------+----+
+|banana|   b|
+| apple|   a|
+|   car|   c|
+|     a| art|
++------+----+
 ```
-
-    +------+----+
-    |  col2|col1|
-    +------+----+
-    |banana|   b|
-    | apple|   a|
-    |   car|   c|
-    |     a| art|
-    +------+----+
 
 `col1`, `col2`의 위치를 뒤바꿔 저장하는 모습을 보였습니다. 이는 `insertInto` 메소드가 칼럼 순서에 기반하여 테이블에 저장하기 때문입니다.
 
@@ -199,43 +168,33 @@ spark.sql(f"SELECT * FROM {schema}.{table}").show()
 ```python
 a_art_df = pd.DataFrame(data={'col2':['art'], 'col1' : ['a']})
 a_art_df
-```
-
-```
 |    | col2   | col1   |
 |---:|:-------|:-------|
 |  0 | art    | a      |
-```
 
-
-```python
 a_art_sdf = spark.createDataFrame(a_art_df)
 a_art_sdf.show()
-```
++----+----+
+|col2|col1|
++----+----+
+| art|   a|
++----+----+
 
-    +----+----+
-    |col2|col1|
-    +----+----+
-    | art|   a|
-    +----+----+
-
-
-```python
 a_art_sdf.write.mode('overwrite')\
     .format('parquet')\
     .insertInto(f"{schema}.{table}")
+    
 spark.sql(f"SELECT * FROM {schema}.{table}").show()
++------+----+
+|  col2|col1|
++------+----+
+|banana|   b|
+| apple|   a|
+|   art|   a| 
+|   car|   c|
+|     a| art|
++------+----+
 ```
-
-    +------+----+
-    |  col2|col1|
-    +------+----+
-    |banana|   b|
-    | apple|   a|
-    |   art|   a| 
-    |   car|   c|
-    |     a| art|
-    +------+----+
 
 분명 overwrite했음에도 불구하고, `col1=a`에 append된 결과를 보이고 있습니다. 
 
@@ -246,17 +205,13 @@ a_art_sdf.write.mode('overwrite')\
     .format('parquet')\
     .insertInto(f"{schema}.{table}", overwrite=True)
 spark.sql(f"SELECT * FROM {schema}.{table}").show()
-```
 
-```
 +------+----+
 |  col2|col1|
 +------+----+
-|     a| art|
+|   art|   a|
 +------+----+
 ```
-
-
 
 ## Test3 : save (directly)
 
@@ -271,36 +226,31 @@ a_art_sdf\
     .write.mode('overwrite')\
     .format('parquet')\
     .save(f'/user/hive/warehouse/{schema}.db/{table}/col1=a')
-```
-
-
-```python
+    
 spark.sql(f"REFRESH TABLE {schema}.{table}") # 파일을 직접 수정했으므로, 캐싱된 메타데이터 update 실행
 spark.sql(f"SELECT * FROM {schema}.{table}").show()
++------+----+
+|  col2|col1|
++------+----+
+|banana|   b|
+|   art|   a|
+|   car|   c|
++------+----+
 ```
-
-    +------+----+
-    |  col2|col1|
-    +------+----+
-    |banana|   b|
-    |   art|   a|
-    |   car|   c|
-    +------+----+
 
 성공했습니다! `col1=a`에 해당하는 값이 `apple`에서 `art`로 변경되었습니다.
 
 
-```python
-!hive -e "SELECT * FROM default.t_test"
+```shell
+hive -e "SELECT * FROM default.t_test"
++---------+-------+
+|  col2   | col1  |
++---------+-------+
+| art     | a     |
+| banana  | b     |
+| car     | c     |
++---------+-------+
 ```
-
-    +---------+-------+
-    |  col2   | col1  |
-    +---------+-------+
-    | art     | a     |
-    | banana  | b     |
-    | car     | c     |
-    +---------+-------+
 
 HiveQL로 조회하는 경우에도 정상적으로 값이 조회됩니다!
 
