@@ -103,7 +103,7 @@ $$
 exp(100) + exp(200) \\
 =\dfrac {exp(100) + exp(200)}{exp(100)} * exp(100)\\
 =[exp(0)+exp(100)]*exp(100)\\
-=exp(log([1+exp(100)]*exp(100))\\
+=exp(log([1+exp(100)]*exp(100)))\\
 =exp(log[1+exp(100)] + log(exp(100)))\\
 =exp(log[1+exp(100)] + 100)
 $$
@@ -141,12 +141,15 @@ exp2 = exp(num2-num1)
 print(log(exp1+exp2) + num1)
 # 751.3132616875182
 
-# exp(750)+exp(751)은 계산된 적 없으나 계산결과가 exp(751.3132616875182)이라는 사실은 알 수 있습니다.
+# exp(750)+exp(751)은 계산된 적 없으나 
+# 계산결과가 exp(751.3132616875182)이라는 사실은 알 수 있습니다.
 ```
 
 
 
 [참고]
 
-### [log-sum-exp trick](https://basicstatistics.tistory.com/entry/logsumexp-trick)
+[Multiplication aggregate operator in SQL](https://www.py4u.net/discuss/823103)
+
+[log-sum-exp trick](https://basicstatistics.tistory.com/entry/logsumexp-trick)
 
