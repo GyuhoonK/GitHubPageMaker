@@ -62,7 +62,7 @@ hdfs -dfs ls /user/hive/warehouse/default.db/t_test # hdfs 디렉토리 조회
 >> /user/hive/warehouse/default.db/t_test/col1=c
 ```
 
-따라서, 만약 아래와 같은 쿼리를 실행한다면 ``col1=a` 디렉토리 내부의 파일만 조회하여 결과를 반환하므로 파티션이 적용되지 않은 테이블보다 쿼리 성능이 향상됩니다.
+따라서, 만약 아래와 같은 쿼리를 실행한다면 `col1=a` 디렉토리 내부의 파일만 조회하여 결과를 반환하므로 파티션이 적용되지 않은 테이블보다 쿼리 성능이 향상됩니다.
 
 ```sql
 SELECT *
@@ -126,7 +126,7 @@ spark.sql(f"SELECT * FROM {schema}.{table}").show()
 +----+----+
 ```
 
-실행 결과 다른 파티션(`col1=b`, `col2=c`)이 모두 삭제되고 `col1=a` 파티션만 남았음을 확인할 수 있습니다.
+실행 결과 다른 파티션(`col1=b`, `col1=c`)이 모두 삭제되고 `col1=a` 파티션만 남았음을 확인할 수 있습니다.
 
 이는 saveAsTable이 파티션에 관련된 메소드가 아니라, 테이블 단위의 메소드이기 때문입니다.
 
