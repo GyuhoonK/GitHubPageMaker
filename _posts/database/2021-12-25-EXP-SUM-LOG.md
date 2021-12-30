@@ -4,7 +4,7 @@ current: post
 cover: assets/built/images/overflow-banner.jpg
 navigation: True
 title: EXP-SUM-LOG / LOG-SUM-EXP
-date: 2021-12-25 22:30:00 +0900
+date: 2021-12-29 22:30:00 +0900
 tags: [database]
 use_math: True
 class: post-template

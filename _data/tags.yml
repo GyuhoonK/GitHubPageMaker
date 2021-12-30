@@ -17,7 +17,7 @@ database :
 datascience :
   name: datascience
   description: False
-  cover: assets/built/images/data-science-banner.jpeg
+  cover: assets/built/images/data-science-banner.jpg
 algorithm :
   name: algorithm
   description: False
