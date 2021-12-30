@@ -6,7 +6,7 @@ navigation: True
 title: EXP-SUM-LOG / LOG-SUM-EXP
 date: 2021-12-25 22:30:00 +0900
 tags: [database]
-use-math: True
+use_math: True
 class: post-template
 subclass: 'post tag-database'
 author: GyuhoonK
