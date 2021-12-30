@@ -487,13 +487,11 @@ SELECT * FROM q1;
 
 [참조] 
 
-[https://cwiki.apache.org/confluence/display/Hive/LanguageManual+DDL#LanguageManualDDLCreateTableCreate/Drop/TruncateTable](https://cwiki.apache.org/confluence/display/Hive/LanguageManual+DDL#LanguageManualDDL-CreateTableCreate/Drop/TruncateTable)
+[Create/Drop/Truncate Table](https://cwiki.apache.org/confluence/display/Hive/LanguageManual+DDL#LanguageManualDDL-CreateTableCreate/Drop/TruncateTable)
 
-[https://wikidocs.net/book/2203](https://wikidocs.net/book/2203)
+[빅데이터 - 하둡, 하이브로 시작하기](https://wikidocs.net/book/2203)
 
-[https://docs.aws.amazon.com/ko_kr/emr/latest/ReleaseGuide/EMR_Hive_Commands.html](https://docs.aws.amazon.com/ko_kr/emr/latest/ReleaseGuide/EMR_Hive_Commands.html)
+[DynamoDB 에서 데이터 내보내기, 가져오기 및 쿼리를 위한 Hive 명령 예제](https://docs.aws.amazon.com/ko_kr/emr/latest/ReleaseGuide/EMR_Hive_Commands.html)
 
-
-
-[https://www.educative.io/collection/page/6089575797620736/6248215343005696/6394690049933312](https://www.educative.io/collection/page/6089575797620736/6248215343005696/6394690049933312)
+[educative-Hive](https://www.educative.io/collection/page/6089575797620736/6248215343005696/6394690049933312)
 

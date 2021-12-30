@@ -372,12 +372,12 @@ R에서는 `dbAppendTable()` 하나만으로 위 작업을 수행하게 됩니�
 
 [참고]
 
-[https://docs.oracle.com/database/](https://docs.oracle.com/database/)
+[Oracle Database Documentation](https://docs.oracle.com/database/)
 
-[https://www.ibm.com/docs](https://www.ibm.com/docs)
+[IBM Documentation](https://www.ibm.com/docs)
 
-[https://docs.microsoft.com/ko-kr/sql/?view=sql-server-ver15](https://docs.microsoft.com/ko-kr/sql/?view=sql-server-ver15)
+[Microsoft SQL 설명서](https://docs.microsoft.com/ko-kr/sql/?view=sql-server-ver15)
 
-[https://docs.microsoft.com/en-us/powershell/](https://docs.microsoft.com/en-us/powershell/)
+[hPowerShell Documentation](https://docs.microsoft.com/en-us/powershell/)
 
 [https://dbi.r-dbi.org/reference](https://dbi.r-dbi.org/reference)

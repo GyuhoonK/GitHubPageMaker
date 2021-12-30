@@ -208,4 +208,4 @@ hive -e "SELECT * FROM default.bucketed_tbl"
 
 [참고]
 
-[https://medium.com/analytics-vidhya/spark-bucketing-is-not-as-simple-as-it-looks-c74f105f4af0](https://medium.com/analytics-vidhya/spark-bucketing-is-not-as-simple-as-it-looks-c74f105f4af0)
+[Spark Bucketing is not as simple as it looks](https://medium.com/analytics-vidhya/spark-bucketing-is-not-as-simple-as-it-looks-c74f105f4af0)

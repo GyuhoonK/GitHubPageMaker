@@ -220,16 +220,16 @@ df.coalesce(1)\
 
 [참고]
 
-[https://faqreviews.net/question/what-is-hdfs-data-block/](https://faqreviews.net/question/what-is-hdfs-data-block/)
+[what is HDFS Data Block](https://faqreviews.net/question/what-is-hdfs-data-block/)
 
-[https://www.hdfstutorial.com/hdfs-architecture/block-replication-in-hadoop/](https://www.hdfstutorial.com/hdfs-architecture/block-replication-in-hadoop/)
+[Block Replication in Hadoop](https://www.hdfstutorial.com/hdfs-architecture/block-replication-in-hadoop/)
 
-[https://forum.huawei.com/enterprise/en/fi-components-relationship-between-spark-and-hdfs/thread/606704-893](https://forum.huawei.com/enterprise/en/fi-components-relationship-between-spark-and-hdfs/thread/606704-893)
+[Relationship between Spark and HDFS](https://forum.huawei.com/enterprise/en/fi-components-relationship-between-spark-and-hdfs/thread/606704-893)
 
-[https://tech.kakao.com/2021/10/08/spark-shuffle-partition/](https://tech.kakao.com/2021/10/08/spark-shuffle-partition/)
+[Spark Shuffle Partition과 최적화](https://tech.kakao.com/2021/10/08/spark-shuffle-partition/)
 
-[https://docs.cloudera.com/best-practices/latest/impala-performance/topics/bp-impala-avoiding-small-files.html](https://docs.cloudera.com/best-practices/latest/impala-performance/topics/bp-impala-avoiding-small-files.html)
+[Avoiding small files](https://docs.cloudera.com/best-practices/latest/impala-performance/topics/bp-impala-avoiding-small-files.html)
 
-[https://118k.tistory.com/750](https://118k.tistory.com/750)
+[[hive] 작은 사이즈의 파일 머지 설정과 그로 인한 오버헤드](https://118k.tistory.com/750)
 
-[https://3months.tistory.com/536](https://3months.tistory.com/536)
+[하둡과 응용 프레임워크 2) 하둡 실행 환경 (YARN, Tez, Spark)](https://3months.tistory.com/536)
