@@ -122,11 +122,11 @@ Server = tcp:localhost,1433
 
 각 운영체제에 맞는 Driver Manager를 이용하여 위와 같은 DSN을 설정할 수 있습니다. 해당 내용은 링크로 대체하겠습니다.
 
-[Windows][https://docs.informatica.com/data-integration/powerexchange-adapters-for-informatica/10-4-1/powerexchange-for-amazon-redshift-user-guide/pushdown-optimization/configuring-a-system-dsn/configuring-a-system-dsn-on-windows.html](https://docs.informatica.com/data-integration/powerexchange-adapters-for-informatica/10-4-1/powerexchange-for-amazon-redshift-user-guide/pushdown-optimization/configuring-a-system-dsn/configuring-a-system-dsn-on-windows.html)
+[Windows](https://docs.informatica.com/data-integration/powerexchange-adapters-for-informatica/10-4-1/powerexchange-for-amazon-redshift-user-guide/pushdown-optimization/configuring-a-system-dsn/configuring-a-system-dsn-on-windows.html)
 
-[Linux][https://docs.informatica.com/data-integration/powerexchange-adapters-for-informatica/10-4-1/powerexchange-for-amazon-redshift-user-guide/pushdown-optimization/configuring-a-system-dsn/configuring-a-system-dsn-on-linux.html](https://docs.informatica.com/data-integration/powerexchange-adapters-for-informatica/10-4-1/powerexchange-for-amazon-redshift-user-guide/pushdown-optimization/configuring-a-system-dsn/configuring-a-system-dsn-on-linux.html)
+[Linux](https://docs.informatica.com/data-integration/powerexchange-adapters-for-informatica/10-4-1/powerexchange-for-amazon-redshift-user-guide/pushdown-optimization/configuring-a-system-dsn/configuring-a-system-dsn-on-linux.html)
 
-[macOS][https://docs.oracle.com/cd/E17952_01/connector-odbc-en/connector-odbc-configuration-dsn-macos.html](https://docs.oracle.com/cd/E17952_01/connector-odbc-en/connector-odbc-configuration-dsn-macos.html)
+[macOS](https://docs.oracle.com/cd/E17952_01/connector-odbc-en/connector-odbc-configuration-dsn-macos.html)
 
 Linux, maxOS의 경우에 `odbc.ini`, `odbcinst.ini` 가 존재합니다. 이 둘은 서로 다른 역할을 가지고 있습니다.
 
