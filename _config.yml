@@ -60,7 +60,7 @@ baseurl: /
 title: Gyuhoon Kim
 # 자신의 blog title.
 
-description: about Data
+description: Data Engineering
 # blog home에 표시될 blog에 대한 전반적인 설명.
 
 cover: assets/built/images/spain-blog-cover.jpg
