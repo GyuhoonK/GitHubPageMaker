@@ -1,9 +1,9 @@
 ---
 layout: post
 current: post
-cover: assets/built/images/hadoop/spark-overwrite-partition.jpg
+cover: assets/built/images/hadoop/distcp.png
 navigation: True
-title: Overwrite Partition in Spark
+title: hadoop distcp
 date: 2022-01-20 22:30:00 +0900
 tags: [hadoop]
 class: post-template
@@ -11,7 +11,7 @@ subclass: 'post tag-hadoop'
 author: GyuhoonK
 ---
 
-hadoop distcp
+hadoop distcp 명령어
 
 # `distcp`
 
@@ -31,9 +31,8 @@ hadoop distcp
 
 # options
 
-- overwrite
-
 ```shell
+# overwrite
 % hdfs dfs ls 
 >>> dir1 dir2
 
@@ -43,38 +42,33 @@ hadoop distcp
 % hadoop distcp -overwrite dir1 dir2
 # overwrite 옵션이 있으므로 dir2에 dir1을 덮어씌움
 
-```
 
-- update 
 
-디렉토리 내에 변경이 있는 파일들만 복사하여 동기화시킵니다.
-
-```shell
+# update
+# 디렉토리 내에 변경이 있는 파일들만 복사하여 동기화시킵니다.
 % hadoop distcp -update dir1 dir2
 # dir1 내 파일과 dir2 내 파일을 비교하여 변경된 부분만 dir2에 동기화시킴
-```
 
-- delete
 
-원본 경로에는 존재하지 않고, 타겟 경로에만 존재하는 파일들을 지우도록 하는 옵션입니다.
 
-```shell
+# delete
+# 원본 경로에는 존재하지 않고, 타겟 경로에만 존재하는 파일들을 지우도록 하는 옵션입니다.
 % hadoop distcp -delete dir1 dir2
 # dir1, dir2를 비교하여 dir2에만 존재하는 파일들은 삭제한 뒤 distcp를 수행
-```
 
-- m
 
-몇 개의 mapper를 사용할지 결정합니다. 기본적으로 distcp는 Map-Reduce Job으로 구현되어있으며 클러스터 전반에 걸쳐 병렬로 수행되는 Map Task를 이용하여 복사 작업을 수행합니다. 단, Reducer를 사용하지 않으며 각 파일은 Mapper에서 복사합니다. 이 때 bucketing을 통해 각 Mapper에 거의 같은 양의 데이터를 제공하고자 합니다. 기본값으로 최대 20개의 Mapper가 사용됩니다.
 
-```shell
+# m
+# 몇 개의 mapper를 사용할지 결정합니다. 기본적으로 distcp는 Map-Reduce Job으로 구현되어있으며 클러스터 전반에 걸쳐 병렬로 수행되는 Map Task를 이용하여 복사 작업을 수행합니다. 단, Reducer를 사용하지 않으며 각 파일은 Mapper에서 복사합니다. 이 때 bucketing을 통해 각 Mapper에 거의 같은 양의 데이터를 제공하고자 합니다. 기본값으로 최대 20개의 Mapper가 사용됩니다.
 % hadoop distcp -m 100 file1 file2
 # 100개 Mapper를 사용하여 distcp 수행
+
+
+
+# p
+#복제 시 파일의 권한, 블록 사이즈 등 파일 속성 정보를 보전하려는 경우에 사용됩니다. 
+% hadoop distcp -p file1 file2
 ```
-
-- p
-
-복제 시 파일의 권한, 블록 사이즈 등 파일 속성 정보를 보전하려는 경우에 사용됩니다. 
 
 
 
@@ -155,7 +149,7 @@ hive -e 'SHOW CREATE TABLE default.table_1'
 | ROW FORMAT SERDE                                   |
 |   'org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe'  |
 | WITH SERDEPROPERTIES (                             |
-|   'path'='hdfs://nameservice1/user/hive/warehouse/default.db/table_1')                                            |
+|   'path'='hdfs://nameservice1/user/hive/warehouse/default.db/table_1')                                          |
 | STORED AS INPUTFORMAT                              |
 |   'org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat'  |
 | OUTPUTFORMAT                                       |
@@ -199,3 +193,5 @@ hive -e 'SHOW CREATE TABLE default.table_1'
 [참고]
 
 하둡 완벽 가이드, 한빛미디어
+
+[DistCp Guide](https://hadoop.apache.org/docs/r1.2.1/distcp.html)

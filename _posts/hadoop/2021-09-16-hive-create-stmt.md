@@ -3,7 +3,7 @@ layout: post
 current: post
 cover: assets/built/images/hive-banner.png
 navigation: True
-title: CREATE query in Hive
+title: CREATE Statement in Hive
 date: 2021-09-16 22:30:00 +0900
 tags: [hadoop]
 class: post-template
@@ -11,7 +11,7 @@ subclass: 'post tag-hadoop'
 author: GyuhoonK
 ---
 
-HiveQL - CREATE QUERY 구조에 대하여
+HiveQL - CREATE Statement구조에 대하여
 
 ```sql
 CREATE [TEMPORARY][EXTERNAL] TABLE [IF NOT EXISTS] [db_name.]table_name
