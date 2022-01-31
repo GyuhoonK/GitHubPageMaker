@@ -19,55 +19,64 @@ hadoop distcp 명령어
 
 ```shell
 # 파일 복사
-% hadoop distcp file1 file2
+[gyuhoonk@namenode1~]$ hadoop distcp file1 file2
 # hadoop fs -cp file1 file2 와 같은 결과이지만
 # distcp를 이용하는 경우에는 '병렬 처리'하여 복사함
 
 # 디렉토리 복사
-% hadoop distcp dir1 dir2
+[gyuhoonk@namenode1~]$ hadoop distcp dir1 dir2
 ```
 
 `discp`는 내부적으로는 `hadoop fs -cp`명령을 클라이언트가 직접 수행하는 방식이기 때문에 큰 파일의 복사에 더 적합합니다. 
 
 # options
 
+https://hadoop.apache.org/docs/stable/hadoop-distcp/DistCp.html
+
 ```shell
 # overwrite
-% hdfs dfs ls 
+[gyuhoonk@namenode1~]$ hdfs dfs ls 
 >>> dir1 dir2
 
-% hadoop distcp dir1 dir2
+
+[gyuhoonk@namenode1~]$ hadoop distcp dir1 dir2
 # 이미 dir2가 존재하고 있으므로, dir2의 하위에 dir1을 복사함
 
-% hadoop distcp -overwrite dir1 dir2
+
+[gyuhoonk@namenode1~]$ hadoop distcp -overwrite dir1 dir2
 # overwrite 옵션이 있으므로 dir2에 dir1을 덮어씌움
 
 
 
 # update
 # 디렉토리 내에 변경이 있는 파일들만 복사하여 동기화시킵니다.
-% hadoop distcp -update dir1 dir2
+[gyuhoonk@namenode1~]$ hadoop distcp -update dir1 dir2
 # dir1 내 파일과 dir2 내 파일을 비교하여 변경된 부분만 dir2에 동기화시킴
 
 
 
 # delete
 # 원본 경로에는 존재하지 않고, 타겟 경로에만 존재하는 파일들을 지우도록 하는 옵션입니다.
-% hadoop distcp -delete dir1 dir2
+[gyuhoonk@namenode1~]$ hadoop distcp -delete dir1 dir2
 # dir1, dir2를 비교하여 dir2에만 존재하는 파일들은 삭제한 뒤 distcp를 수행
 
 
 
 # m
-# 몇 개의 mapper를 사용할지 결정합니다. 기본적으로 distcp는 Map-Reduce Job으로 구현되어있으며 클러스터 전반에 걸쳐 병렬로 수행되는 Map Task를 이용하여 복사 작업을 수행합니다. 단, Reducer를 사용하지 않으며 각 파일은 Mapper에서 복사합니다. 이 때 bucketing을 통해 각 Mapper에 거의 같은 양의 데이터를 제공하고자 합니다. 기본값으로 최대 20개의 Mapper가 사용됩니다.
-% hadoop distcp -m 100 file1 file2
+# 몇 개의 mapper를 사용할지 결정합니다. 
+# 기본적으로 distcp는 Map-Reduce Job으로 구현되어있으며 
+# 클러스터 전반에 걸쳐 병렬로 수행되는 Map Task를 이용하여 복사 작업을 수행합니다.
+# 단, Reducer를 사용하지 않으며 각 파일은 Mapper에서 복사합니다. 
+# 이 때 bucketing을 통해 각 Mapper에 거의 같은 양의 데이터를 제공하고자 합니다. 
+# 기본값으로 최대 20개의 Mapper가 사용됩니다.
+[gyuhoonk@namenode1~]$ hadoop distcp -m 100 file1 file2
 # 100개 Mapper를 사용하여 distcp 수행
 
 
 
 # p
 #복제 시 파일의 권한, 블록 사이즈 등 파일 속성 정보를 보전하려는 경우에 사용됩니다. 
-% hadoop distcp -p file1 file2
+[gyuhoonk@namenode1~]$ hadoop distcp -p file1 file2
 ```
 
 
@@ -75,7 +84,7 @@ hadoop distcp 명령어
 # 다른 클러스터(namenode)간 복사
 
 ```shell
-% hadoop distcp webhdfs://namenode1:14000/foo webhdfs://namenode2:14000/foo
+[gyuhoonk@namenode1~]$ hadoop distcp webhdfs://namenode1:14000/foo webhdfs://namenode2:14000/foo
 ```
 
 위처럼 namenode1에서 namenode2로 파일을 복사할 수 있습니다. 이 경우에 webHDFS 프로토콜을 이용합니다. webHDFS 프로토콜 대신에 HttpFs 프록시 방식으로 distcp의 소스 혹은 타깃을 변경할 수도 있다. HttpFs 프록시 방식은 방화벽, 대역폭 설정을 할 수 있다는 장점이 있습니다.
@@ -107,7 +116,7 @@ NFSv3 게이트웨이를 이용하여 로컬 클라이언트 파일시스템에 
 예를 들어, namenode1에 아래와 같은 테이블이 있다고 가정해보겠습니다.
 
 ```shell
-% hive -e 'SELECT * FROM default.table_1'
+[gyuhoonk@namenode1~]$ hive -e 'SELECT * FROM default.table_1'
 +-------+---------+
 | col1  |  col2   |
 +-------+---------+
@@ -123,10 +132,10 @@ namenode2로 default.table_1을 이동하기 위해서는 아래와 같은 과�
 
 ```shell
 # namenode1에서 실행
-% hadoop distcp -overwrite webhdfs://namenode1:14000/user/hive/warehouse/default.db/table_1 webhdfs://namenode2:14000/user/hive/warehouse/default.db/table_1
+[gyuhoonk@namenode1~]$ hadoop distcp -overwrite webhdfs://namenode1:14000/user/hive/warehouse/default.db/table_1 webhdfs://namenode2:14000/user/hive/warehouse/default.db/table_1
 
 #namenode2에서 distcp 결과 확인
-% hdfs dfs -ls /user/hive/warehouse/default.db/table_1
+[gyuhoonk@namenode2~]$ hdfs dfs -ls /user/hive/warehouse/default.db/table_1
 -rw-r--r--+  3 gyuhoonK hive          0 2022-01-20 10:04 /user/hive/warehouse/defulat.db/table_1/_SUCCESS
 -rw-r--r--+  3 gyuhoonK hive        340 2022-01-20 10:04 /user/hive/warehouse/defulat.db/table_1/part-00000-7628a86e-50d7-4e64-a35d-435ba6943156-c000.snappy.parquet
 -rw-r--r--+  3 gyuhoonK hive        544 2022-01-20 10:04 /user/hive/warehouse/defulat.db/table_1/part-00166-7628a86e-50d7-4e64-a35d-435ba6943156-c000.snappy.parquet
@@ -137,7 +146,7 @@ namenode2로 default.table_1을 이동하기 위해서는 아래와 같은 과�
 2.  create statement 확인
 
 ```shell
-hive -e 'SHOW CREATE TABLE default.table_1'
+[gyuhoonk@namenode1~]$ hive -e 'SHOW CREATE TABLE default.table_1'
 ```
 ```sql
 +----------------------------------------------------+
@@ -169,25 +178,22 @@ hive -e 'SHOW CREATE TABLE default.table_1'
 아래와 같이 명령어를 조합하면 쿼리문만 파일로 저장할 수 있습니다.
 
 ```shell
-% hive -e 'show create table default.table_1' | sed 's/|//g' | sed 's/+//g' | sed 's/createtab_stmt//g' | sed '/WARN/d' >> create.sql 2>/dev/null; echo ';' >> create.sql
+[gyuhoonk@namenode1~]$ hive -e 'show create table default.table_1' | sed 's/|//g' | sed 's/+//g' | sed 's/createtab_stmt//g' | sed '/WARN/d' >> create.sql 2>/dev/null; echo ';' >> create.sql
 ```
 
 3. `create.sql` 파일을 namenode2로 옮긴 뒤 namenode2에서 create statement 실행
 
 ```shell
 # namenode1
-% hdfs dfs -copyFromLocal create.sql hdfs://nameservice1/create.sql
-% hadoop distcp -overwrite webhdfs://namenode1:14000/create.sql webhdfs://namenode2:14000/create.sql
-
+[gyuhoonk@namenode1~]$ scp create.sql gyuhoonk@namenode2:/home/gyuhoonk/
 # namenode2
-% hdfs dfs -copyToLocal hdfs://nameservice1/create.sql create.sql
-% hive -f create.sql
+[gyuhoonk@namenode2~]$ hive -f create.sql
 ```
 
 4. Partitioned table인 경우에는 TABLE REPAIR 실행
 
 ```shell
-% hive -e 'MSCK REPAIR TABLE defulat.table_1'
+[gyuhoonk@namenode2~]$ hive -e 'MSCK REPAIR TABLE defulat.table_1'
 ```
 
 [참고]

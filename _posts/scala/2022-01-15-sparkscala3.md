@@ -3,7 +3,7 @@ layout: post
 current: post
 cover: assets/built/images/scala-banner-post.png
 navigation: True
-title: Learning Apache Spark 3 with Scala (Section2)
+title: Learning Apache Spark 3 with Scala (Section3)
 date: 2022-01-15 22:30:00 +0900
 tags: [scala, hadoop]
 class: post-template
@@ -11,7 +11,7 @@ subclass: 'post tag-scala'
 author: GyuhoonK
 ---
 
-Learning Apache Spark 3 with Scala (Section2 - `RDD` & `RDD Action`)
+Learning Apache Spark 3 with Scala (Section3 - `RDD` & `RDD Action`)
 
 # What is RDD?
 

@@ -53,7 +53,7 @@ FROM 20211010_source
 INSERT 이후 LOCATION에는 아래처럼 파일이 저장됩니다.
 
 ```sh
-hdfs dfs -ls /user/hive/warehouse/default.db/bucketed_tbl
+[gyuhoonk@namenode1~]$ hdfs dfs -ls /user/hive/warehouse/default.db/bucketed_tbl
 /user/hive/warehouse/default.db/bucketed_tbl/p_date=20211010/000000_0
 /user/hive/warehouse/default.db/bucketed_tbl/p_date=20211010/000000_1
 /user/hive/warehouse/default.db/bucketed_tbl/p_date=20211010/000000_2
@@ -64,7 +64,7 @@ hdfs dfs -ls /user/hive/warehouse/default.db/bucketed_tbl
 `p_date=20211010` partition을 한번 더 INSERT하면, `_copy1`이 붙은 bucket file들이 저장됩니다.
 
 ```sh
-hdfs dfs -ls /user/hive/warehouse/default.db/bucketed_tbl
+[gyuhoonk@namenode1~]$ hdfs dfs -ls /user/hive/warehouse/default.db/bucketed_tbl
 /user/hive/warehouse/default.db/bucketed_tbl/p_date=20211010/000000_0
 /user/hive/warehouse/default.db/bucketed_tbl/p_date=20211010/000000_0_copy_1
 /user/hive/warehouse/default.db/bucketed_tbl/p_date=20211010/000000_1
@@ -96,7 +96,7 @@ source.write\
 
 ```shell
 # Bucket in Hive에서 저장된 파일들은 모두 삭제했다고 가정하고 조회
-hdfs dfs -ls /user/hive/warehouse/default.db/bucketed_tbl
+[gyuhoonk@namenode1~]$ hdfs dfs -ls /user/hive/warehouse/default.db/bucketed_tbl
 /user/hive/warehouse/default.db/bucketed_tbl/p_date=20211010/part-000000-xxxx-xxxx.parquet
 /user/hive/warehouse/default.db/bucketed_tbl/p_date=20211010/part-000001-xxxx-xxxx.parquet
 ...
@@ -137,7 +137,7 @@ source.write\
 pyspark로 위와 같이 적재에 성공하더라도, 테이블을 조회하는 쿼리를 실행할 경우 에러를 발생시킵니다.
 
 ```shell
-hive -e "SELECT * FROM default.bucketed_tbl"
+[gyuhoonk@namenode1~]$ hive -e "SELECT * FROM default.bucketed_tbl"
 # Error
 ```
 
