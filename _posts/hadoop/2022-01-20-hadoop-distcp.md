@@ -30,9 +30,7 @@ hadoop distcp 명령어
 `discp`는 내부적으로는 `hadoop fs -cp`명령을 클라이언트가 직접 수행하는 방식이기 때문에 큰 파일의 복사에 더 적합합니다. 
 
 # options
-
-https://hadoop.apache.org/docs/stable/hadoop-distcp/DistCp.html
-
+[DistCp Guide](https://hadoop.apache.org/docs/stable/hadoop-distcp/DistCp.html)
 ```shell
 # overwrite
 [gyuhoonk@namenode1~]$ hdfs dfs ls 
