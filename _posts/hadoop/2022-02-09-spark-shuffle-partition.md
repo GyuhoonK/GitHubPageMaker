@@ -34,9 +34,34 @@ Spark Job은 여러 Stage로 나뉘게 되고, 각 Stage는 Input, Shuffle Read,
 
 하나의 Stage는 Partiton Read와 Partition Write로 이루어져있습니다. Partition을 읽고, 읽어들여온 Partition에 대해 Task를 수행하고(Shuffle) 그 결과를 다시 Partition으로 작성합니다.
 
+```python
+df1=spark.sql("SELECT * FROM default.table_1")
+df2=spark.sql("SELECT * FROM default.table_2")
+
+joined = df1.alias("df1").join(df2, on=[df1.col1==df2.col1, df1.col2==df2.col2])
+joined = joined.select("df1.col1", "df1.col2", "df1.col3")
+joined_agg = joined.groupBy("col1", "col2").agg(F.count("col3").alias("cnt"))
+schema, table = "default.joined".split(".")
+joined_agg.write.mode('overwrite')\
+    .option("path", f'/user/hive/warehouse/{schema}.db/{table}')\
+    .saveAsTable(f"{schema}.{table}")
+```
 
 
-Stage 내에서 Task 수행 시 몇 개의 Task가 수행되었는지 표시합니다. 해당 값은 `spark.default.parallelism`, `spark.sql.shuffle.partitions`값을 통해 변경할수 있습니다.
+
+예를 들어 위 코드는 아래와 같은 stages를 구성하고, 실행됩니다. Input이 2번 있었고, Input하여 shuffle write된 DataFrame(`df1`, `df2`)에 대해 `join`과 `saveAsTable`이 실행되었습니다.
+
+<img src="../../assets/built/images/hadoop/stages1.png" alt="image" />
+
+
+
+왼쪽의 **Task: Succeeded/Total**은 Stage 내에서 Task 수행 시 몇 개의 Task가 수행되었는지 표시합니다. 
+
+`spark.sql`을 사용하여 `DataFrame` 객체를 만드는 경우에는 해당 테이블의 파일 개수만큼(61228, 29684) Task를 실행했습니다. 따라서 `df1`, `df2`의 파티션 개수도 각각 61228, 29684개 입니다.
+
+맨 위에 **1000/1000 (112 failed)**는 1000개 작업 중에 중간에 112개 task를 실패했었음을 의미합니다. 1000개 task가 실행된 이유는 `spark.sql.shuffle.partitions`를 1000으로 설정했기 때문입니다. 
+
+해당 값은 `spark.default.parallelism`, `spark.sql.shuffle.partitions`를 통해 변경할수 있습니다.
 
 #### Spark Partition(spark.default.parallelism, spark.sql.shuffle.partitions)
 
@@ -63,21 +88,24 @@ conf.set("spark.executor.memory","10G")
 ## SparkSession has 30 * 5 cores, which each core has 2GB mem.
 ## So, spark.default.parallelism is 150(# of cores), and spark.sql.shuffle.partitions is 200(default)
 spark = SparkSession.builder.enableHiveSupport().config(conf=conf).getOrCreate()
+
+df1=spark.sql("SELECT * FROM default.table_1")
+df2=spark.sql("SELECT * FROM default.table_2")
+
+joined = df1.alias("df1").join(df2, on=[df1.col1==df2.col1, df1.col2==df2.col2])
+joined = joined.select("df1.col1", "df1.col2", "df1.col3")
+joined_agg = joined.groupBy("col1", "col2").agg(F.count("col3").alias("cnt"))
+schema, table = "default.joined".split(".")
+joined_agg.write.mode('overwrite')\
+    .option("path", f'/user/hive/warehouse/{schema}.db/{table}')\
+    .saveAsTable(f"{schema}.{table}")
 ```
 
-따로 `spark.default.parallelism`을 지정하지 않으면 core 개수만큼으로 partition 개수를 지정합니다. 따라서, 기본적으로 `RDD`는 150개의 partition으로 분할처리될 것입니다. 이는 core 개수와 같으므로 각 core가 task 1개를 처리하게 될 것입니다. 한편, `spark.sql.shuffle.partitions`는 기본값이 200이기 때문에 `DataFrame`, `Dataset`은 200개의 partition으로 분할처리 될 것입니다. 
+따로 `spark.default.parallelism`을 지정하지 않으면 core 개수만큼으로 partition 개수를 지정합니다. 따라서, 기본적으로 `RDD`는 150(5 cores * 30 executors)개의 partition으로 분할처리될 것입니다. core 개수와 partiton 개수가 같으므로 1 task per 1 core로 분산 처리하게 될 것입니다. 한편, `spark.sql.shuffle.partitions`는 기본값이 200이기 때문에 `DataFrame`, `Dataset`은 200개의 partition으로 분할처리 될 것입니다. 
 
-`DataFrame`으로 예시를 들어보겠습니다.
+<img src="../../assets/built/images/hadoop/stages2.png" alt="image" />
 
-```python
-df = spark.sql("SELECT col1, col2, col3 FROM test_table")
-df_agg = df.groupBy("col1", "col2").agg(F.count("col3"))
-df_agg.show()
-```
-
-위 코드는 3개의 JOB이 설계되고 `df.show()` action에 의해 실행됩니다. Spark UI 페이지에서 확인해보면, 200 tasks가 실행되었음을 알 수 있습니다. 즉, partition이 200개로 쪼개졌다는 의미입니다.
-
-<사진1 - Stages>
+그러나, 200 partitions로 설정하여 코드를 실행하는 경우 계속해서 fail task가 발생하고 결과적으로 App이 중간에 종료되어버렸습니다. Fail 발생을 줄이고 app이 성공적으로 실행을 완료하기 위해서는 튜닝이 필요합니다.
 
 일반적으로 전체 core 개수의 2배~3배 정도까지 `spark.default.parallelism`을 설정해줄 것을 권장합니다. 따라서 위의 conf setting은 아래 항목을 추가해주어야합니다.
 
@@ -86,15 +114,14 @@ df_agg.show()
 ## SparkSession has 30 * 5 cores, So proper number of partitions is 150 * 2 or 150 * 3.
 conf.set("spark.sql.shuffle.partitions","450")
 spark = SparkSession.builder.enableHiveSupport().config(conf=conf).getOrCreate()
-
-df = spark.sql("SELECT col1, col2, col3 FROM test_table")
-df_agg = df.groupBy("col1", "col2").agg(F.count("col3"))
-df_agg.show()
+...
 ```
 
-450 tasks가 수행됩니다. 그러나 Shuffle Read Size가 너무 커서 Shuffle Spill이 발생하고 있습니다. Shuffle Read Size가 **GB이고 이를 450개 partiton으로 나누고 있으므로 하나의 partition은 XXGB에 해당합니다. 이는 2GB core가 처리하기에는 너무 큰 size입니다. 
+<img src="../../assets/built/images/hadoop/stages3.png" alt="image" />
 
-<사진2 - shuffle stages> 
+450 tasks가 수행됩니다. 그러나 어젼히 Shuffle Spill이 발생하고 있습니다. 
+
+<img src="../../assets/built/images/hadoop/shuffle-spill1.png" alt="image" />
 
 ## What makes Spark Slower?
 
@@ -106,7 +133,7 @@ Shuffle Spill(Disk) 와  Shuffle Spill(Memory)가 있습니다.
 
 > "Shuffle spill (memory) is the size of the deserialized form of the data in memory at the time when we spill it, whereas shuffle spill (disk) is the size of the serialized form of the data on disk after we spill it. This is why the latter tends to be much smaller than the former. Note that both metrics are aggregated over the entire duration of the task (i.e. within each task you can spill multiple times)."
 
-RAM(=memory)에서 Spill이 발생하게 되면 이를 직렬화(serialize)하여 disk에 임시로 저장해둡니다. 직렬화하는 과정에서 메모리는 줄어들게 되므로 일반적으로 Shuffle Spill(Disk)가 Shuffle Spill(Memory)보다 작은 값을 갖습니다.
+RAM(=memory)에서 Spill이 발생하게 되면 이를 직렬화(serialize)하여 disk에 임시로 저장해둡니다. 직렬화하는 과정에서 데이터 사이즈는 줄어들게 되므로 일반적으로 Shuffle Spill(Disk)가 Shuffle Spill(Memory)보다 작은 값을 갖습니다.
 
 이후에, Task에서 Disk로 Spill한 데이터를 연산에 사용하기 위해서는 역직렬화(deserialize)하여 RAM으로 로드합니다. 따라서 I/O의 증가, 직렬화/역직렬화 과정이 추가되면서 Task 수행 시간은 늘어나게 됩니다.
 
@@ -146,24 +173,24 @@ Core에게 전달되는 partition size를 줄여서 Shuffle Spill을 방지할 �
 
 `spark.default.paralleism`, `spark.sql.shuffle.partitions`와 같은 conf option이 사용될 수 있습니다. 혹은 `df.repartition()`처럼 명시적으로 partition 개수를 늘려주는 방법도 있습니다.
 
-앞서 살펴보았던 예시에서 Shuffle Read Size는 XXGB였습니다. partition 개수를 X개로 늘려주면 **GB / X = OOMB가 partition size가 됩니다.
-
 ```python
 ...
-
-SparkSession has 30 * 5 cores, So proper number of partitions is 150 * 2 or 150 * 3.
-
-conf.set("spark.sql.shuffle.partitions","1500")
+conf.set("spark.sql.shuffle.partitions","1000")
 spark = SparkSession.builder.enableHiveSupport().config(conf=conf).getOrCreate()
+...
 ```
 
 Shuffle Spill이 발생하지 않고 수행 시간도 줄어들었음을 확인할 수 있습니다.
 
-<사진3 - shuffle stages 수정 후> 
+<img src="../../assets/built/images/hadoop/shuffle-spill2.png" alt="image" />
+
+
 
 ## 마치며
 
-실제 일하며 애매하게 알고 있었던 partition, shuffle, spill의 개념을 정리할 수 있었습니다. 적당한 테스트를 만들어서 실제로 수행 시간이 줄어드는 것을 확인해보는 것도 괜찮을 것 같습니다. 읽어주셔서 감사합니다.
+애매하게 알고 있었던 partition, shuffle, spill의 개념을 정리할 수 있었습니다. 다만, 위에서 가정한 상황은 모든 partition에 데이터가 고루 분배되는 이상적인 상황입니다. 실제 상황에서는 skewed dataset 때문에 straggler task가 발생하기도 합니다. 이러한 경우에는 먼저 필터링하거나, partition 개수를 더욱 늘리는 방법(partition size가 100MB보다 작도록)으로 대처해야합니다.
+
+
 
 [참고]
 
