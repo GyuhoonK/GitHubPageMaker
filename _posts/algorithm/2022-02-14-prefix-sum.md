@@ -1,7 +1,7 @@
 ---
 layout: post
 current: post
-cover: assets/built/images/kmp-banner.jpeg
+cover: assets/built/images/2dim-prefix-sum-cache2.jpeg
 navigation: True
 title: 누적 합(Prefix Sum)
 date: 2022-02-14 22:30:00 +0900
