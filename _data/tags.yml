@@ -22,3 +22,7 @@ algorithm :
   name: algorithm
   description: False
   # cover: assets/built/images/data-science-banner.jpeg
+airflow :
+  name: airflow
+  description: False
+  # cover: assets/built/images/data-science-banner.jpeg
