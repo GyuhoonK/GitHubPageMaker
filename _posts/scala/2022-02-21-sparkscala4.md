@@ -33,13 +33,26 @@ SQL 쿼리로 접근할 수 있다는 사실은 쿼리 최적화(query optimizat
 
 ##  `Dataset`
 
+```scala
+case class Person(id:Int, name:String, age:Int, friends:Int)
+
+import spark.implicits._
+val schemaPeople = spark.read
+      .option("header", "true")
+      .option("inferSchema", "true")
+      .csv("data/fakefriends.csv")
+      .as[Person]
+```
+
+
+
 `Dataset`은 `DataFrame`과 같은 종류입니다. 기술적으로, `DataFrame`은 `Row` 객체로 이루어진 `Dataset`의 하나 일뿐입니다. 차이점은 `Dataset`이 명확한 타입(Expicit Type)을 갖고 있으며 컴파일 타임에 이를 검사한다는 사실입니다. 다시 말해, `DataFrame`은 실행 단계에서 스키마를 적용하지만, `Dataset`이 컴파일 타임에 스키마를 검사합니다.
 
 이러한 차이점 때문에 `DataFrame`은 `Row` 객체가 존재하고, `Row`를 정의할 때까지 무엇이든 담을 수 있는 것에 비해 `Dataset`은 스키마를 통해 명확한 타입을 지정했으므로 `Row` 객체에 담을 수 있는 자료형이 분명합니다(제한됩니다). 따라서, `Dataset`은 컴파일 타임에 이미 스키마를 알고 있으므로 스크립트 실행 시가 아니라 스크립트 **빌드** 시에 Type Error를 발견할 수 있습니다. 클러스터에서 스크립트 실행 시 많은 비용을 요구하기 때문에 실행 전에 미리 이러한 에러를 알아챌 수 있는 것은 큰 장점입니다. 또한 `Dataset`을 이용하면 더 나은 최적화를 가능하게 합니다. 런타임이 아니라, 컴파일하는 동안 최적화가 진행되기 때문입니다.
 
 그러나, 이러한 작업들은 컴파일 타임에 이루어지기 때문에 컴파일된 언어(Java, Scala)로만 사용이 가능합니다. python은 컴파일 타임 최적화가 불가능합니다.
 
-현재 Spark 개발의 전반적인 트렌드는 RDD를 적게 사용하고 `Dataset`을 더 많이 사용하는 것입니다. RDD에 비해 `Dataset`이 갖는 장점은 먼저, `Dataset`은 매우 효율적으로 직렬화(serialized)됩니다. 컴파일 타임에 실행되는 실행 계획(execution plan)때문 입니다. 그리고 상호운영성(interoperability)가 뛰어납니다. RDB, 외부 파일 형식(parquet, json)과 호환될 수 있습니다. JDBC, ODBC에도 접근하여 데이터를 로드할 수 있습니다. 이는 spark를 수평적으로 확장된 데이터베이스(horizontally-scalable database)처럼 작동하게 만듭니다. 마지막으로 `Dataset`은 Spark MLLib과 Streaming에서 주로 사용됩니다. RDD로는 이들 라이브러리에 데이터를 전달할 수 없습니다.
+[현재]() Spark 개발의 전반적인 트렌드는 RDD를 적게 사용하고 `Dataset`을 더 많이 사용하는 것입니다. RDD에 비해 `Dataset`이 갖는 장점은 먼저, `Dataset`은 매우 효율적으로 직렬화(serialized)됩니다. 컴파일 타임에 실행되는 실행 계획(execution plan)때문 입니다. 그리고 상호운영성(interoperability)가 뛰어납니다. RDB, 외부 파일 형식(parquet, json)과 호환될 수 있습니다. JDBC, ODBC에도 접근하여 데이터를 로드할 수 있습니다. 이는 spark를 수평적으로 확장된 데이터베이스(horizontally-scalable database)처럼 작동하게 만듭니다. 마지막으로 `Dataset`은 Spark MLLib과 Streaming에서 주로 사용됩니다. RDD로는 이들 라이브러리에 데이터를 전달할 수 없습니다.
 
 ## SparkSession
 
