@@ -11,7 +11,7 @@ subclass: 'post tag-hadoop'
 author: GyuhoonK
 ---
 
-HDFS에서 작은 용량의 파일들을 하나의 파일로 합치기
+HDFS에서 작은 용량의 파일들을 합쳐보자
 
 # Blocks in HDFS
 
@@ -68,7 +68,9 @@ File A를 Block Size인 128MB보다 작은 50MB 파일 10개로 쪼개서 저장
 
 비교를 위해 모든 Block이 다른  Data Node에 저장되어 있다고 가정했지만, 실제 상황에서는 하나의 Data Node에 여러 Block이 저장될 수 있기 때문에  HDFS I/O는 위 수치보다 낮을 것입니다. 즉, 위 상황처럼 모든 Block이 각기 다른 Data Node에 저장된 상황은 최악의 경우라고 생각하시면 됩니다. 그러나 이러한 가정을 제거하더라도 Block Access는 Case1과 Case2가 각각 4,10으로 변함 없을 것입니다. 따라서 우리는 Block Size보다 작은 파일이 저장되는 것을 지양해야함을 알 수 있습니다.
 
-# When is File size Less than Block size ?
+# How it happened ?
+
+## in Hive
 
 그러면 File Size가 128MB보다 작게 저장되는 경우(small file issue)는 왜 그리고 언제 발생하는 것일까요? 이는 Tez, Yarn 스케쥴러의 동작 원리와 관련 있습니다.
 
@@ -90,44 +92,45 @@ GROUP BY a.vendor
 
 ![image](../../assets/built/images/hql-on-tez.png)
 
-Tez engine은 Map-Reduce 이후 작업을 HDFS에 저장하지 않고(HDFS I/O를 발생시키지 않고), in-memory 상에서 다음 작업을 진행한다는 점입니다. 이를 위해 DAG를 미리 생성하는 등의 선행 작업을 실행합니다. 위 그림은 Tez가 이러한 작업을 위해 DAG를 생성하고, HDFS IO없이 Reducer를 통해 쿼리를 실행하는 과정을 설명해줍니다. 
+Tez engine은 Map-Reduce 이후 작업을 HDFS에 저장하지 않고(HDFS I/O를 발생시키지 않고), in-memory 상에서 다음 작업을 진행한다는 점입니다. 이를 위해 DAG를 미리 생성하는 등의 선행 작업을 실행합니다. 위 그림은 Tez가 이러한 작업을 위해 DAG를 생성하고, HDFS IO없이 Reducer를 통해 쿼리를 실행하는 과정을 설명해줍니다. 그리고 이것이 우리가 일반적으로 알고 있는 MR 동작 방식입니다.
 
 위 도식 대로 INSERT 쿼리가 수행된다면, small file은 등장하지 않아야 하는 것 아닐까요? 
 
-하지만, INSERT는 Mapper만 동작하는 작업입니다(mapper-only).
+하지만, 아래와 같은 쿼리에서는 Mapper만 동작하게 됩니다(mapper-only).
 
 ```sql
 INSERT INTO outputtable -- 아래 쿼리 실행 결과에 대해서 Mapper만 동작하여 file write
-SELECT a.vendor,
-       COUNT(*),
-       AVG(c.cost) 
-FROM a JOIN b 
-ON (a.id = b.id) 
-	     JOIN c 
-ON (a.itemid = c.itemid) 
-GROUP BY a.vendor
+SELECT col1
+	,col2
+	,col3
+FROM source_table
+WHERE col4 = 'value'
 ;
 ```
 
-위 INSERT문은 Reducer를 거치지 않기 때문에 읽어들여온 파일 개수만큼 디렉토리에 그대로 저장하게 되고, 이는 file number가 급격하게 늘어나는 결과를 초래하게 됩니다. 
+위 SELECT문은 Reducer를 거치지 않기 때문에 읽어들여온 파일 개수만큼 디렉토리에 그대로 저장합니다. 따라서 source_table 내에 존재하는 파일 개수만큼 outputtable의 table location에 파일을 추가하게 됩니다.
 
-Spark는 file write 작업을 partition 단위로 수행하게 됩니다. 따라서, Spark를 저장된 ouput file 개수는 기본적으로 다른 옵션(아래서 다루게 될 `repartition, coalesce`)을 지정하지 않는다면 partition 개수를 결정하는 `spark.default.parallelism` 에 의해 결정됩니다.
+위와 같이 reducer를 사용하지 않는 mapper only query를 반복하여 실행하여 테이블에 파일을 추가한다면, 작은 용량을 가진 파일은 계속해서 증가할 것입니다.
 
-> [default] For distributed shuffle operations like `reduceByKey`and `join`, the largest number of partitions in a parent RDD. For operations like `parallelize`with no parent RDDs, it depends on the cluster manager:
+<img src="../../assets/built/images/hadoop/reducer-only.webp" alt="image" style="zoom:150%;" />
+
+
+
+## in Spark
+
+Spark는 file write 작업을 partition 단위로 수행하게 됩니다. 따라서, Spark를 저장된 ouput file 개수는 기본적으로 다른 옵션(아래서 다루게 될 `repartition, coalesce`)을 지정하지 않는다면 partition 개수를 결정하는 `spark.sql.shuffle.partitions` 에 의해 결정됩니다.
+
+> [default] 200
 >
-> - Local mode: number of cores on the local machine
-> - Mesos fine grained mode: 8
-> - **Others: total number of cores on all executor nodes or 2, whichever is larger**
->
-> [meaning] **Default number of partitions** in RDDs returned by transformations like `join`, `reduceByKey`, and `parallelize` when not set by user.
+> [meaning] The default number of partitions to use when shuffling data for joins or aggregations. Note: For structured streaming, this configuration cannot be changed between query restarts from the same checkpoint location.
 
-
+일반적으로 해당 값은 최적화를 위해 총 사용 core 개수의 3배 이상의 값을 권장합니다. 따라서 `repartitoin`, `coalesce`를 사용하지 않는다면 많은 개수의 파일을 wirte할 것입니다.
 
 # How to Merge?
 
 그렇다면 이처럼 비효율적으로 저장된 File을 하나의 Block으로 저장하는 방법을 알아보겠습니다.
 
-##  HiveQL case
+##  in Hive : Merge option / add Reducer
 
 널리 알려져있고 간단한 방법은 `hive.merge` 조건을 설정하여 file write 단계에서 small file들을 병합시키도록 강제할 수 있습니다. 
 
@@ -139,23 +142,22 @@ set hive.merge.size.per.task=128000000; -- 128MB의 file로  merge
 set hive.merge.smallfiles.avgsize=128000000; -- 128MB 이하의 small file들을 merge 대상으로 지정
 ```
 
-INSERT가 Mapper-Only Task라는 점에 착안한다면, Reducer 작업을 추가해줌으로써 small file 문제를 해결할 수도 있습니다.
+위 옵션을 추가하게 되면, mapper 작업에 대해서도 file merge를 실행하게 됩니다.
+
+또 다른 방법으로는 mapper only query에 Reducer 작업을 추가해줌으로써 small file 문제를 해결할 수도 있습니다.
 
 ```sql
 INSERT INTO outputtable -- 아래 쿼리 실행 결과에 대해서 Mapper만 동작하여 file write
-SELECT a.vendor,
-       COUNT(*),
-       AVG(c.cost) 
-FROM a JOIN b 
-ON (a.id = b.id) 
-	     JOIN c 
-ON (a.itemid = c.itemid) 
-GROUP BY a.vendor
-SORT BY a.vendor -- SORT BY가 추가됨으로써 해당 쿼리는 Reducer가 추가됩니다.
+SELECT col1
+	,col2
+	,col3
+FROM source_table
+WHERE col4 = 'value'
+DISTRIBUTE BY col1 -- DISTRIBUTE BY가 추가됨으로써 해당 쿼리는 Reducer가 추가됩니다.
 ;
 ```
 
-두 방법을 동시에 사용한다면 더 높은 효율을 보이게 됩니다. Reducer를 거친 결과를 merge하는 것이 file read만 수행한 mapper-only에 비해 merge해야할 파일 개수가 적기 때문입니다. (다른 말로 하면 이미 어느 정도 수준의 merge를 거쳤다는 의미입니다)
+두 방법을 동시에 사용한다면 더 높은 성능을 보일 수 있습니다. reducer job 결과가 128MB 이하인 경우에 대해서도 대처할 수 있기 때문입니다. 
 
 ```sql
 set hive.merge.mapfiles=true; -- Map 결과 파일에 대해 merge를 허용
@@ -164,25 +166,18 @@ set hive.merge.size.per.task=128000000; -- 128MB의 file로  merge
 set hive.merge.smallfiles.avgsize=128000000; -- 128MB 이하의 small file들을 merge 대상으로 지정
 
 INSERT INTO outputtable -- 아래 쿼리 실행 결과에 대해서 Mapper만 동작하여 file write
-SELECT a.vendor,
-       COUNT(*),
-       AVG(c.cost) 
-FROM a JOIN b 
-ON (a.id = b.id) 
-       JOIN c 
-ON (a.itemid = c.itemid) 
-GROUP BY a.vendor
-SORT BY a.vendor -- SORT BY가 추가됨으로써 해당 쿼리는 Reducer가 추가됩니다.
+SELECT col1
+	,col2
+	,col3
+FROM source_table
+WHERE col4 = 'value'
+DISTRIBUTE BY col1 -- DISTRIBUTE BY가 추가됨으로써 해당 쿼리는 Reducer가 추가됩니다.
 ;
--- 1) SORT BY에 의해 먼저 Reducer 작업을 한번 수행한 다음
+-- 1) DISTRIBUTE BY에 의해 먼저 Reducer 작업을 한번 수행한 다음
 -- 2) hive.merge가 동작하게 됩니다
 ```
 
-
-
-
-
-## Spark case
+## in Spark : repartition/ coalesce
 
 `repartition`, `coalesce`  를 통해 output file의 개수를 조정할 수 있습니다.
 
@@ -214,10 +209,6 @@ df.coalesce(1)\
 
 
 
-
-
-
-
 [참고]
 
 [what is HDFS Data Block](https://faqreviews.net/question/what-is-hdfs-data-block/)
@@ -233,3 +224,5 @@ df.coalesce(1)\
 [[hive] 작은 사이즈의 파일 머지 설정과 그로 인한 오버헤드](https://118k.tistory.com/750)
 
 [하둡과 응용 프레임워크 2) 하둡 실행 환경 (YARN, Tez, Spark)](https://3months.tistory.com/536)
+
+[빅데이터 - 하둡, 하이브로 시작하기](https://wikidocs.net/22827)
