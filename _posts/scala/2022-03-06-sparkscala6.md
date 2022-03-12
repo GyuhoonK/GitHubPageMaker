@@ -5,7 +5,7 @@ cover: assets/built/images/scala-banner-post.png
 navigation: True
 title: Learning Apache Spark 3 with Scala (Section6)
 date: 2022-03-06 22:30:00 +0900
-tags: [scala, hadoop]
+tags: [scala]
 class: post-template
 subclass: 'post tag-scala'
 author: GyuhoonK
@@ -35,7 +35,7 @@ R		bin		examples	licenses	yarn
 
 ## spark-submit
 
-spark-submit을 하기 전에, 우리는 jar 파일을 만들어야합니다. 현재 강의에서 사용하고 있는 SparkCourse 디렉토리를 jar파일로 압축해보겠습니다.
+spark-submit을 하기 전에, 우리는 jar 파일을 만들어야합니다. interlliJ를 이용하여 SparkCourse에서 사용 중인 전체 코드를 jar파일로 패키징해보겠습니다. 
 
 1. IntelliJ에서 `Project Structure`를 선택합니다.
 
@@ -73,7 +73,7 @@ SparkScalaCourse/out/artifacts/SparkCourse/SparkCourse.jar
 
 ## sbt
 
-프로젝트에서 사용하는 모든 패키지와 모든 의존성을 한번에 jar 파일로 패키징할 수 있는 방법이 있습니다. sbt를 이용하는 방법입니다. sbt는 scala를 위한 maven 정도로 생각하면 됩니다. sbt는 라이브러리와 의존성 트리를 관리합니다. 필요로 되는 라이브러리 혹은 jar파일에 의존하는 스크립트를 가지고 있다면 자동으로 검색하여 컴파일하는 jar파일에 패키지합니다. 
+위처럼 intelliJ의 기능을 이용할 수도 있지만, 더 일반적인 방법은 sbt를 사용하여 패키징하는 것입니다. sbt는 scala를 위한 maven 정도로 생각하면 됩니다. sbt는 라이브러리와 의존성 트리를 관리합니다. 필요로 되는 라이브러리나 특정 jar파일에 의존하는 스크립트가 있는 경우, 자동으로 검색하여 컴파일하는 jar파일에 포함시켜 패키징합니다.
 
 [Download sbt](https://www.scala-sbt.org/download.html)
 
@@ -81,11 +81,12 @@ SparkScalaCourse/out/artifacts/SparkCourse/SparkCourse.jar
 
 이후 아래 디렉토리 구조를 셋업합니다.
 
-```
+```shell
 .
 ├── build.sbt
 ├── project
-│   └── assembly.sbt
+│   ├── assembly.sbt
+│   └── build.properties
 └── src
     └── main
         └── scala
@@ -93,8 +94,8 @@ SparkScalaCourse/out/artifacts/SparkCourse/SparkCourse.jar
 
 root 위치에 `build.sbt` 파일이 존재해야합니다. 이는 가장 중요한 역할을 합니다.
 
-```
-name := "MinTemperaturesDataset"
+```scala
+name := "testProject"
 
 version := "1.0"
 
@@ -113,31 +114,42 @@ libraryDependencies ++= Seq(
 
 `src/min/scala` 디렉토리 내에 패키징할 scala 파일을 위치하면 됩니다.
 
-`project` 디렉토리 내에는 `assembly.sbt` 파일이 존재해야합니다. 해당 파일은 아래와 같이 작성되어있습니다.
+`project` 디렉토리 내에는 `assembly.sbt`, `build.properties` 파일이 존재해야합니다. 해당 파일은 아래와 같이 작성되어있습니다.
 
-```
+```scala
+// assembly.sbt
 addSbtPlugin("com.eed3si9n" % "sbt-assembly" % "0.14.10")
+
+// build.properties
+sbt.version=1.6.2
 ```
 
-이는 어떤 플러그인을 사용할 지 결정합니다.
+`assembly.sbt`는 사용할 플러그인을 결정하고, `build.properties`는 sbt build 시 사용할 sbt 버전을 결정합니다.
 
 이러한 설정을 마치고, 컴파일할 스크립트를 올바르게 위치시켰으면 root 위치에서 아래 명령어를 가지고 패키징합니다.
 
 ```shell
-(base) gyuhoonkim@Gyuhoonui-MacBookAir sbt % sbt assmbly
+(base) gyuhoonkim@Gyuhoonui-MacBookAir sbt % sbt assembly
+(base) gyuhoonkim@Gyuhoonui-MacBookAir sbt % sbt package
 ```
 
 target 디렉토리가 새로 생성되고 해당 scala 버전에 맞는 디렉토리 내에 jar 파일이 생성됩니다.
 
 ```shell
 sbt/target
-├── MinTemperaturesDataset-assembly-1.0.jar
+├── testProject-assembly-1.0.jar
+├── testProject-1.0.jar
 ├── classes
 ├── sync
 ├── test-sync
 ├── update
 └── zinc
 ```
+
+| cmd          | result                       |
+| ------------ | ---------------------------- |
+| sbt assembly | testProject-assembly-1.0.jar |
+| sbt package  | testProject-1.0.jar          |
 
 컴파일이 완료된 jar 파일은 아래처럼 spark-submit에 제출하면 실행됩니다.
 
@@ -146,6 +158,40 @@ sbt/target
 MinTemperaturesDataset-assembly-1.0.jar
 ```
 
+## sbt-assembly vs. sbt-package
+
+`sbt assembly` :  소스코드(`src/main/scala/`)뿐만 아니라  dependency가 있는 라이브러러리까지 포함하여 jar 파일로 패키징합니다. 즉, `build.sbt` 의 `libraryDependencies`에 작성했던 목록을 포함하여 작성한 코드를 실행하기 위해 필요한 모든 라이브러리들이 jar 파일에 포함되어있습니다. 
+
+```bash
+~$ vi target/scala-2.11/| testProject-assembly-1.0.jar |
+META-INF/MANIFEST.MF
+...
+scala/util/matching/Regex$MatchIterator.class
+scala/util/matching/Regex$Replacement$class.class
+scala/util/matching/Regex$Replacement.class
+scala/util/matching/Regex.class
+scala/util/matching/UnanchoredRegex$class.class
+scala/util/matching/UnanchoredRegex.class
+scala/volatile.class
+sparkTest$.class
+sparkTest.class
+```
+
+
+
+`sbt package` : 소스코드만 jar 파일로 생성합니다. `src/main/scala/` 내부에 존재하는 소스코드만을 jar 파일에 포함시켜 패키징합니다. dependency가 있는 라이브러리는 포함되어있지 않음을 확인할 수 있습니다.
+
+```bash
+~$ vi target/scala-2.11/test_2.11-1.0.jar
+META-INF/MANIFEST.MF
+sparkTest$.class
+sparkTest.class
+```
+
+
+
 [참고]
 
 [Learning Apache Spark 3 with Scala](https://www.udemy.com/course/best-scala-apache-spark/)
+
+[what-are-key-differences-between-sbt-pack-and-sbt-assembly](https://stackoverflow.com/questions/22556499/what-are-key-differences-between-sbt-pack-and-sbt-assembly)
