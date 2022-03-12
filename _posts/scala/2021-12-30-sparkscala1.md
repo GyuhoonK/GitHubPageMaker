@@ -5,7 +5,7 @@ cover: assets/built/images/scala-banner-post.png
 navigation: True
 title: Learning Apache Spark 3 with Scala (Section1)
 date: 2021-12-30 22:30:00 +0900
-tags: [scala, hadoop]
+tags: [scala]
 class: post-template
 subclass: 'post tag-scala'
 author: GyuhoonK
