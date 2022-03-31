@@ -19,7 +19,7 @@ Spark에서 RDD, Dataset, DataFrame의 작업 최소단위는 partition입니다
 
 이때, 해당 데이터셋(`Dataset`, `DataFrame`) 내부의 partition의 개수, 사이즈, 정렬상태는 task 수행에 영향을 줍니다. 예를 들어 아래와 같은 상황이라면 partition A를 전달받은 executor는 OOM을 피할 수 없을 것입니다. 
 
-[image]
+<img src="../../assets/built/images/hadoop/partition_example.png" alt="image" />
 
 이러한 상황을 피하기 위해, partition들이 동일한 크기를 갖도록 조절(rebalancing)할 수 있는데 이를 `repartition`이라고 부릅니다. `repartition`은 필수적으로 shuffle을 동반하는 무거운 작업입니다. 따라서 `repartition`이 필요한지 심사숙고하여 적절한 수치로 적용해야합니다.
 
@@ -44,7 +44,7 @@ partition3 has 1362 rows
 
 `repartition` 을 적용한 결과 각 partition이 같은 row 수를 갖도록 shuffle하여 각 partition에 재분배했습니다.
 
-[image - repartition]
+<img src="../../assets/built/images/hadoop/repartition.png" alt="image" />
 
 # Repartition by Specific Column
 
@@ -54,7 +54,7 @@ partition3 has 1362 rows
 
 ## Hash Partition
 
-[hash image]
+<img src="../../assets/built/images/hadoop/hash_repartition.png" alt="image" />
 
 hash partition은 Key에 hash function을 적용하여 계산된 hash value가 같은 값들을 같은 partition에 분배하는 것입니다.
 
@@ -97,8 +97,6 @@ partition key is Set(8, 21, 24)
 `data` 를 8개 partition으로 repartition하였습니다. 각각의 partition에 row가 몇 개나 존재하고, repartition 기준으로 사용한 column인 `Day` 값을 확인할 수 있습니다. 예를 들어, `partition0`에는 716 rows가 포함되었고, partition key로 사용된 값은 `12, 13, 14, 18`입니다. 즉,  Day 값이 `12, 13, 14, 18`인 row는 반드시 `partition0` 에 속합니다.
 
 ## Range Partition
-
-[range image]
 
 range partition은 Key를 지정된 개수만큼의 범위로 나누고, 각각의 범위에 속하는 값을 같은 partition에 분배합니다. `pairRDD`에 `RangePartitioner`를 적용하는 방법과 `Dataset`에서 `repartitionByRange`를 이용하는 방법이 있습니다.
 
@@ -221,8 +219,6 @@ partition key is TreeSet(9, 19, 29)
 
 # Sort in Partition
 
-[image]
-
 partition 내부를 정렬시킬 수도 있습니다. 예를 들어, 위의  Hash Partition을 적용한 결과 중 하나의 partition 내부를 살펴보겠습니다.
 
 ```scala
@@ -292,6 +288,6 @@ val dataRepartitionedSorted = dataRDD.repartitionAndSortWithinPartitions(new Has
 
 [참고]
 
-https://m.blog.naver.com/syung1104/221103154997
+[[Spark] Apache Spark 사용해보기 - 7. Partitioning](https://m.blog.naver.com/syung1104/221103154997)
 
-https://techvidvan.com/tutorials/spark-partition/
+[Apache Spark Partitioning and Spark Partition](https://techvidvan.com/tutorials/spark-partition/)
