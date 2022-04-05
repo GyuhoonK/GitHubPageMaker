@@ -10,10 +10,7 @@ subclass: 'post page'
 
 Data Analytics & Data Engineering <br/>
 <br/>
-학력 <br/>
-2014.03 – 2021.02 고려대학교 <br/>
-언론학사  (미디어학부) <br/>
-공학사(컴퓨터학과) <br/>
+
 <br/>
 경력 <br/>
 기아 CDO 데이터분석팀 (2021.01.04 – 현재) <br/>
