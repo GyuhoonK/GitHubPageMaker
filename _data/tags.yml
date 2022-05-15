@@ -26,3 +26,11 @@ airflow :
   name: airflow
   description: False
   # cover: assets/built/images/data-science-banner.jpeg
+docker :
+  name: docker
+  description: False
+  # cover: assets/built/images/data-science-banner.jpeg
+git :
+  name: git
+  description: False
+  # cover: assets/built/images/data-science-banner.jpeg
