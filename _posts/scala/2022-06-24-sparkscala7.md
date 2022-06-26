@@ -4,14 +4,14 @@ current: post
 cover: assets/built/images/scala-banner-post.png
 navigation: True
 title: Learning Apache Spark 3 with Scala (Section7)
-date: 2022-03-06 22:30:00 +0900
+date: 2022-06-24 22:30:00 +0900
 tags: [scala]
 class: post-template
 subclass: 'post tag-scala'
 author: GyuhoonK
 ---
 
-Learning Apache Spark 3 with Scala (Section6 - Machine Learning Library)
+Learning Apache Spark 3 with Scala (Section7 - Machine Learning Library)
 
 # machine learning in Spark
 
@@ -23,11 +23,9 @@ Learning Apache Spark 3 with Scala (Section6 - Machine Learning Library)
 
 ### GPU in Spark?
 
-클러스터의 CPU만으로 처리할 수 없는 대용량의 데이터가 존재할 수 있습니다. 이런 경우에는 각 클러스터의 GPU까지 동원하며 클러스터 내부에서도 병렬 작업을 실행할 수 있도록 해야합니다. spark 3.x부터 GPU 가속을 사용할 수 있습니다(https://www.nvidia.com/ko-kr/ai-data-science/spark-ebook/gpu-accelerated-spark-3/).
+클러스터의 CPU만으로 처리할 수 없는 대용량의 데이터가 존재할 수 있습니다. 이런 경우에는 각 클러스터의 GPU까지 동원하며 클러스터 내부에서도 병렬 작업을 실행할 수 있도록 해야합니다. spark 3.x부터 GPU 가속을 사용할 수 있습니다([데이터 사이언스 가이드](https://www.nvidia.com/ko-kr/ai-data-science/spark-ebook/gpu-accelerated-spark-3/)).
 
 ## machine learning packages in Spark
-
-
 
 - Feature Extraction
   - TF/IDF 
@@ -53,7 +51,7 @@ Learning Apache Spark 3 with Scala (Section6 - Machine Learning Library)
 
 ### 특정 데이터 구조?
 
-특정 데이터 구조는 `Vector`를 의미합니다. 아래와 같이 분류됩니다(https://spark.apache.org/docs/latest/mllib-data-types.html).
+특정 데이터 구조는 `Vector`, `Point`, `Matrix`를 의미합니다. 아래와 같이 분류됩니다([mllib-data-types](https://spark.apache.org/docs/latest/mllib-data-types.html)).
 
 - [Local vector](https://spark.apache.org/docs/latest/mllib-data-types.html#local-vector)
 - [Labeled point](https://spark.apache.org/docs/latest/mllib-data-types.html#labeled-point)
@@ -78,7 +76,7 @@ val numIterations = 20
 val clusters = KMeans.train(parsedData, numClusters, numIterations)
 ```
 
-RDD를 데이터를 특정 Vector로 변경해주어야 머신러닝 모델에 사용할 수 있습니다.
+RDD를 데이터를 `Vector`로 변경하여(parse) 클러스터링을 적용하였습니다.
 
 ## newer Lib(`spark.ml`) in Spark3
 
