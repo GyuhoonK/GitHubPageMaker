@@ -8,7 +8,7 @@ title: AWS S3와 zip 파일
 date: 2021-09-01 22:30:00 +0900
 tags: [python]
 class: post-template
-subclass: 'post tag-pyhon'
+subclass: 'post tag-python'
 author: GyuhoonK
 
 ---

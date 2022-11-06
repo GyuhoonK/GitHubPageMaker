@@ -38,3 +38,7 @@ retrospect:
   name: retrospect
   description: False
   # cover: 
+kubernetes: 
+  name: kubernetes
+  description: False
+  # cover: 
