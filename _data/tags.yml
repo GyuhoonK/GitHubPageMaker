@@ -1,36 +1,40 @@
-python :
+python:
   name: python
   description: False
   cover: assets/built/images/python-banner.png
-scala :
+scala:
   name: scala
   description: False
   cover: assets/built/images/scala-banner-tag.png
-hadoop :
+hadoop:
   name: hadoop
   description: False
   cover: assets/built/images/hadoop-banner.png
-database :
+database:
   name: database
   description: False
   cover: assets/built/images/database-banner.png
-datascience :
+datascience:
   name: datascience
   description: False
   cover: assets/built/images/data-science-banner.jpg
-algorithm :
+algorithm:
   name: algorithm
   description: False
   # cover: assets/built/images/data-science-banner.jpeg
-airflow :
+airflow:
   name: airflow
   description: False
   # cover: assets/built/images/data-science-banner.jpeg
-docker :
+docker:
   name: docker
   description: False
   # cover: assets/built/images/data-science-banner.jpeg
-git :
+git:
   name: git
   description: False
   # cover: assets/built/images/data-science-banner.jpeg
+retrospect: 
+  name: retrospect
+  description: False
+  # cover: 
