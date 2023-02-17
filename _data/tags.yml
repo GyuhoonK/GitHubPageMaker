@@ -41,4 +41,4 @@ retrospect:
 kubernetes: 
   name: kubernetes
   description: False
-  # cover: 
+  cover: assets/built/images/kubernetes/kubernetes-horizontal-color.png
