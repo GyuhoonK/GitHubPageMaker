@@ -14,29 +14,29 @@ author: GyuhoonK
 DataHub에서 avro schema 파일(avsc)을 사용하는 방법
 
 ### DataHub CLI 패키지
-DataHub는 DataHub API를 python 패키지로 제공하고 있습니다. (https://pypi.org/project/acryl-datahub/)
+DataHub는 DataHub API를 python 패키지로 제공하고 있습니다. [acryl-datahub](https://pypi.org/project/acryl-datahub/)
 
 ```shell
 $ pip install 'acryl-datahub[datahub-rest]'
 $ datahub ingest -c ./examples/recipes/mssql_to_datahub.dhub.yml
 ```
 
-acryl-datahub[datahub-rest]를 설치하면, python 코드 내에서 datahub 모듈을 사용할 수 있습니다. 그리고 이중에는 DataHub에서 사용하는 모든 스키마를 정의해놓은 `schemaclass` 모듈 도 있습니다.
+`acryl-datahub[datahub-rest]`를 설치하면, python 코드 내에서 datahub 패키지를 사용할 수 있습니다. datahub 패키지 내에는 DataHub에서 사용하는 메타데이터의 스키마를 정의해놓은 `schema_classes`도 있습니다.
 
 ```python 
 from datahub.metadata.schema_classes import DatasetSnapshotClass
 ```
 
-그리고 위 패키지는 DataHub 중 `metadata-ingestion`이라는 서브 프로젝트로 관리됩니다. 
+`schema_classes`는 DataHub의 서브 프로젝트 중 `metadata` 모듈이 속해 있는 `metadata-ingestion`에서 관리됩니다.
 
 ### metadata.schema_classes는 어디에 있는거지?
 
-DataHub에서 사용하는 스키마가 궁금해서, 해당 파일을 참조하고 싶어 git에서 배포되고 있는 파일을 찾아보았습니다(https://github.com/acryldata/datahub/tree/master/metadata-ingestion/src/datahub)
-그런데 배포하고 있는 서브 프로젝트의 소스코드(`datahub/metadata-ingestion/src/datahub`)에서는 `meatadata` 모듈을 찾을 수 없었습니다.
+DataHub에서 메타데이터의 스키마를 어떻게 정의하고 있는지 확인하고 싶어서, git repo에서 배포되고 있는 소스코드를 찾아보았습니다([metadata-ingestion/src/datahub](https://github.com/acryldata/datahub/tree/master/metadata-ingestion/src/datahub)).
+그런데 `metadata-ingestion`의 소스코드(`datahub/metadata-ingestion/src/datahub`)에서는 `meatadata` 모듈을 찾을 수 없었습니다.
 
 ![image](../../assets/built/images/python/datahub-src.png)
 
-`meatadata`를 미리 정의해놓지 않았고 어떤 과정에 의해 빌드되는 것으로 보입니다.  metadata-ingestion의 루트 디렉토리(`datahub/metadata-ingestion`)에서 `build.gradle` 파일을 발견할 수 있었습니다.
+`meatadata` 모듈을 미리 작성해놓지 않고, 빌드에 의해 생성되는 것으로 추측했습니다. 빌드 파일(`datahub/metadata-ingestion/build.gradle`)에서 `metadata` 모듈에 해당하는 소스코드를 생성하는 task를 확인할 수 있었습니다.
 
 `build.gradle`에 정의된 codegen task에서 `metadata` 모듈을 생성합니다.
 
@@ -58,7 +58,9 @@ task codegen(type: Exec, dependsOn: [environmentSetup, installPackage, ':metadat
 그렇다면 `metadata-events`에 avsc 파일이 존재할 것이라고 예측하고 해당 서브 프로젝트를 살펴보았습니다.
 
 ### metadata-events: Avro Schema(avsc) 생성하기
-위 단계에서 python 패키지 빌드 시 사용하는 avsc 파일도 `metadata-events`를 빌드하여 생성해야했습니다. 즉, DataHub 프로젝트는 서브 프로젝트들 간에 의존성(dependency)을 갖습니다. avsc 파일을 생성하기 위해서는 `metadata-events` 중 `mxe-schemas`를 빌드해야합니다. `metadata-events/mxe-schemas`의 `build.gradle`은 아래와 같습니다. 
+
+`metadata-ingestion`에서 python 패키지 빌드하기 위해 사용하는 avsc 파일도 `metadata-events`를 빌드하여 생성해야했습니다. 즉, DataHub 프로젝트는 서브 프로젝트들 간에 의존성(dependency)을 갖습니다. 
+avsc 파일을 생성하기 위해서는 `metadata-events` 중 `mxe-schemas`를 빌드해야합니다. `metadata-events/mxe-schemas/build.gradle`은 아래와 같습니다. 
 
 ```gradle
 // `datahub/metadata-events/mxe-schemas/build.gradle`
@@ -76,6 +78,8 @@ task copyOriginalAvsc(type: Copy, dependsOn: generateAvroSchema) {
 }
 ```
 
+위 빌드를 간단하게 텍스트로 요약해보면 아래 3단계를 거칩니다. 
+
 1. 서브 프로젝트 `metadata-models`의 소스 파일을 복사해온다(`copyMetadataModels`)
 2. 복사해온 소스 파일을 이용하여 PEAGASUS, AVRO 포맷의 파일을 생성한다(`egasus.main.generationModes`)
 3. 생성된 AVSC 파일은 `src/renamed/avro` 경로에 복사한다(`copyOriginalAvsc`)
@@ -83,10 +87,16 @@ task copyOriginalAvsc(type: Copy, dependsOn: generateAvroSchema) {
 서브프로젝트 `metadata-ingestion`에서 참조하고 있는 avsc 파일 경로는 `"**/*.avsc"`이기 때문에 3번 과정에서 생성된 avsc 파일(`src/renamed/avro` 하위에 있는 avsc 파일들)을 참조합니다.
 
 ### `avro_codegen.py`는 어떻게 모듈을 생성하지?
+
 다시 `metadata-ingestion` 서브 프로젝트로 돌아와서 생성된 ascv 파일을 읽고 `meatadata` 모듈을 생성하는 지 확인해보았습니다. 
- `avrogen` 패키지의 `avrogenwrite_schema_files` 함수를 사용합니다.
-`write_schema_files`는 `avro.schema.make_avsc_object`를 통해 생성된 avro schema 객체를 입력받아 `schema_classes.py`를 작성하는 함수입니다.
-`avro.schema.make_avsc_object`는 json파일을 읽어서 avro schema 객체를 생성합니다. 따라서 `avro_codegen.py`를 간소화하면 아래와 같은 과정을 수행합니다.
+
+`avrogen.write_schema_files`를 실행하여 소스코드를 생성합니다.
+
+`write_schema_files`는 `avro.schema.make_avsc_object`를 통해 생성된 avro schema 객체를 입력받아 `schema_classes.py`를 작성합니다.
+
+입력받는 avro schema 객체는 `avro.schema.make_avsc_object`로 생성됩니다. json파일을 읽어서 avro schema 객체를 생성하는 역할입니다. 
+
+따라서 `avro_codegen.py`를 간소화하면 아래와 같은 과정을 수행합니다.
 
 ```python
 from avrogen import write_schema_files
@@ -125,8 +135,10 @@ DataHub는 크게 3가지 기술을 이용하여 구성되어 있습니다.
 - Kafka-registry: avro(avsc)를 이용하여 스키마를 등록합니다. 
 - Python: 클래스를 선언하여 해당 포맷을 관리합니다.
 
-따라서 Avro만으로 스키마를 작성한다면, Rest.li에서는 이를 사용할 수 없고, PDL을 따로 작성해야합니다. 이런 문제를 해결하기 위해 DataHub 개발자들은 Pegasus로만 스키마(PDL)를 작성했습니다. 스키마를 생성하는 task(`pegasus.main.generationModes`)를 이용해서 Avro Schema 파일(avsc)를 생성합니다. 
-이런 구조를 가지게 되면, 결과적으로 프로젝트의 전체 구조를 볼 때, PDL 한가지만 수정하면 Kafka, Python에서 사용하는 avsc와 `schema_classes.py`는 자동으로 생성하는 아키텍쳐를 갖습니다. 관리 포인트가 한가지로만 줄어드는 것입니다.
+따라서 Avro만으로 스키마를 작성한다면, Rest.li에서는 이를 사용할 수 없고, PDL을 따로 작성해야합니다. 
+이런 문제를 해결하기 위해 DataHub 개발자들은 Pegasus로만 스키마(PDL)를 작성했습니다. 이후에 avro 스키마가 필요할 때마다, 스키마를 생성하는 task(`pegasus.main.generationModes`)를 이용해서 Avro Schema 파일(avsc)를 생성합니다. 
+
+이런 구조를 가지게 되면, 결과적으로 프로젝트의 전체 구조를 볼 때, PDL 한가지만 수정하면 Kafka에서 사용하는 avsc 파일과 Python에서 사용하는 `schema_classes.py`는 자동으로 생성하는 아키텍쳐를 갖습니다. 관리 포인트가 한가지로만 줄어드는 것입니다.
 
 ![flow-chart](../../assets/built/images/python/meta-schema-flow.png)
 
