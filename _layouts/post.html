@@ -90,7 +90,7 @@ into the {body} of the default.hbs template -->
             <!-- If you use Disqus comments, just uncomment this block.
             The only thing you need to change is "test-apkdzgmqhj" - which
             should be replaced with your own Disqus site-id. -->
-            {% if site.disqus or page.disqus %}
+            <!-- {% if site.disqus or page.disqus %}
                 <section class="post-full-comments">
                     <div id="disqus_thread"></div>
                     <script>
@@ -107,7 +107,15 @@ into the {body} of the default.hbs template -->
                         })();
                     </script>
                 </section>
-            {% endif %}
+            {% endif %} -->
+            <!-- utteranc setting -->
+            <script src="https://utteranc.es/client.js"
+                    repo="GyuhoonK/blog-comments"
+                    issue-term="pathname"
+                    theme="github-light"
+                    crossorigin="anonymous"
+                    async>
+            </script>
 
         </article>
 
