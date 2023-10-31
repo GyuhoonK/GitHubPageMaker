@@ -12,9 +12,9 @@ subclass: 'post tag-database'
 author: GyuhoonK
 ---
 
-prepared statment
+prepared statement
 
-# prepared statment란?
+# prepared statement란?
 
 ## 개념
 위키피디아의 설명을 먼저 살펴보겠습니다.
@@ -66,7 +66,7 @@ finally:
 
 
 ## 1. SQL injection
-첫번째는 보안 때문입니다. statment만 사용하여 DBMS에 쿼리를 제출할 경우 개발자가 의도하지 않은 쿼리가 제출되지 않을 수 있습니다. 이러한 해킹 기법을 SQL injection이라고 합니다. 예를 들어 아래와 같이 string으로만 쿼리를 제출한다고 가정해보겠습니다. 
+첫번째는 보안 때문입니다. statement만 사용하여 DBMS에 쿼리를 제출할 경우 개발자가 의도하지 않은 쿼리가 제출되지 않을 수 있습니다. 이러한 해킹 기법을 SQL injection이라고 합니다. 예를 들어 아래와 같이 string으로만 쿼리를 제출한다고 가정해보겠습니다. 
 
 ```python
 conn = mysql.connector.connect(database="mysql", user="root")
@@ -95,19 +95,19 @@ DELETE FROM products WHERE 1=1
 
 ## 2. 유지 보수
 
-prepared statement를 사용하면 유지보수가 편해집니다. 어플리케이션에서 사용할 쿼리 템플릿이 정해져있고, 템플릿에 입력할 변수를 관리하기 때문입니다. 예를 들어, 어플리케이션에 쿼리를 제출할 때마다 문자열 기반의 쿼리를 작성하는 것은 언제 어떤 쿼리를 제출했는지 추적하기 어렵습니다. 이는 추후에 쿼리를 수정하는 등의 유지 보수가 필요한 상황이 발생했을 때, 코드를 관리하고 수정하기 어렵게 만듭니다. 이에 반해 prepared statment로 제출할 쿼리를 미리 정의해놓았기 때문에 추후에 쿼리를 수정해야할 일이 있을 때 수정해야할 부분을 명확하게 알 수 있습니다.
+prepared statement를 사용하면 유지보수가 편해집니다. 어플리케이션에서 사용할 쿼리 템플릿이 정해져있고, 템플릿에 입력할 변수를 관리하기 때문입니다. 예를 들어, 어플리케이션에 쿼리를 제출할 때마다 문자열 기반의 쿼리를 작성하는 것은 언제 어떤 쿼리를 제출했는지 추적하기 어렵습니다. 이는 추후에 쿼리를 수정하는 등의 유지 보수가 필요한 상황이 발생했을 때, 코드를 관리하고 수정하기 어렵게 만듭니다. 이에 반해 prepared statement로 제출할 쿼리를 미리 정의해놓았기 때문에 추후에 쿼리를 수정해야할 일이 있을 때 수정해야할 부분을 명확하게 알 수 있습니다.
 
 ## 3. Query Caching
 
 prepared statement의 장점 중 쿼리의 반복 실행 시 효율성이 보장되는 가장 큰 이유이며 prepared statement를 사용하는 가장 큰 이유라고도 할 수 있습니다. 
 
-DB는 일반적인 statment를 입력받으면 아래의 세 과정을 거칩니다.
+DB는 일반적인 statement를 입력받으면 아래의 세 과정을 거칩니다.
 
 1. Query parsing
 2. Optimization
 3. Execution
 
-그러나 prepared statement를 입력받는 경우에 DB는 첫 입력에만 1~3의 과정을 거치고 다음 입력부터는 캐시에 저장해둔 정보를 기반으로 쿼리를 실행합니다. 즉, 반복 횟수가 많아질수록 prepared statment가 더 유리해집니다. 이런 점 때문에 prepared statement가 반복되는 쿼리에 있어서 더 효율적이라고 말합니다.
+그러나 prepared statement를 입력받는 경우에 DB는 첫 입력에만 1~3의 과정을 거치고 다음 입력부터는 캐시에 저장해둔 정보를 기반으로 쿼리를 실행합니다. 즉, 반복 횟수가 많아질수록 prepared statement가 더 유리해집니다. 이런 점 때문에 prepared statement가 반복되는 쿼리에 있어서 더 효율적이라고 말합니다.
 
 # Query Caching 이란?
 
