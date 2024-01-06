@@ -42,3 +42,7 @@ kubernetes:
   name: kubernetes
   description: False
   cover: assets/built/images/kubernetes/kubernetes-horizontal-color.png
+spring : 
+  name: spring
+  description: False
+  cover: assets/built/images/spring/spring-logo.svg

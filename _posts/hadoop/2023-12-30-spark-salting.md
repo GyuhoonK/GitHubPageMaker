@@ -11,7 +11,7 @@ subclass: 'post tag-hadoop'
 author: GyuhoonK
 ---
 
-Spark Salting Key 기법에 대해서 알아봅니다.
+Data Skewness를 해결하는 Spark Salting Key 기법에 대해서 알아봅니다.
 
 ### What is Salting in Spark?
 
@@ -175,7 +175,7 @@ user_type = user_type.withColumn("salting_key",
 joined = log.join(user_type, on=['user_id', 'salting_key'], how='left')
 ```
 
-`get_salting_size`에 의해 `user_id`의 count 수를 그대로 salting_size로 사용하는 것이 아니라 연산을 거칩니다. `PARTITION_SIZE`란 하나의 task가 처리할 row 수를 의미합니다. 따라서 `user_id=2`의 경우 2 rows씩 처리하면 되므로 3 rows만 복제했습니다.
+`get_salting_size`에 의해 `user_id`의 count 수를 그대로 salting_size로 사용하는 것이 아니라 연산을 거칩니다. `PARTITION_SIZE`란 하나의 task가 처리할 row 수를 의미합니다. 따라서 `user_id=e`의 경우 2 rows씩 처리하면 되므로 3 rows만 복제했습니다.
 
 <img src="../../assets/built/images/hadoop/salting_example_5.png" alt="image" />
 
