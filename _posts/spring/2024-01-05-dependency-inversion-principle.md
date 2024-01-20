@@ -7,7 +7,7 @@ title: DIP(Dependency Inversion Principle),의존관계 역전 원칙
 date: 2024-01-05 22:30:00 +0900
 tags: [spring]
 class: post-template
-subclass: 'post tag-hadoop'
+subclass: 'post tag-spring'
 author: GyuhoonK
 ---
 
@@ -156,6 +156,45 @@ public class OrderServiceImpl implements OrderService {
 이처럼 인터페이스 간의 의존관계만을 이용하고, 구체 클래스의 선택을 클래스 내부가 아니라 외부에서 작성해두는 방법을 의존관계 주입(Dependency Injection, DI)이라고 부릅니다.
 
  DI를 이용하는 경우 DIP를 준수할 수 있게 됩니다. 즉, 상위 계층이 하위 계층에 의존하지 않을 수 있습니다.
+
+## Spring에서의 사용 방법(Spring Container)
+
+Spring은 작성된 `AppConfig`를 어디서든 불러서 사용할 수 있게끔 관리해줍니다. Spring Container를 생성하고, AppConfig에 작성해두었던 구체 클래스의 의존 관계를 저장해둡니다.
+
+```java
+@Configuration
+public class AppConfig {
+
+    @Bean
+    public MemberRepository memberRepository() {
+        return new MemoryMemberRepository();
+    }
+
+    @Bean
+    public DiscountPolicy discountPolicy(){
+       return new FixDiscountPolicy();
+    }
+
+    @Bean
+    public OrderService orderService() {
+        return new OrderServiceImpl(memberRepository(), discountPolicy());
+    }
+}
+```
+이렇게 작성해두면 스프링 컨테이너 내부에서 구체 클래스를 생성한 뒤, 구체 클래스 간 의존 관계를 자동으로 설정합니다.  
+구체적으로 설명하자면, `MemoryMemberRepository`, `FixDiscountPolicy`를 먼저 생성한 뒤에 이를 이용하여 `OrderService`의 생성해 사용합니다.
+
+이렇게 생성된 Bean들은 아래와 같이 호출할 수 있습니다. 
+
+```java
+AnnotationConfigApplicationContext ac = new AnnotationConfigApplicationContext(SameBeanConfig.class);
+
+MemberRepository memberRepository = ac.getBean("memberRepository", MemberRepository.class);
+DiscountPolicy discountPolicy = ac.getBean("discountPolicy", DiscountPolicy.class);
+OrderService orderService = ac.getBean("orderService", OrderService.class);
+```
+
+
 
 ## 정리
 - 전통적인 의존관계 정의는 OOP 원칙을 준수할 수 없다
