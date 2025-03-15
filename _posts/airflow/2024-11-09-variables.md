@@ -176,6 +176,7 @@ def my_task():
 주석에서 설명하고 있는대로, task 내부에서 variable을 호출하면 task execution에서만 variable을 조회하므로 dag processing에서 부하를 주지 않습니다. 
 
 #### [2] jinja template 사용하여 전달
+{% raw %}
 ```python
 bash_use_variable_good = BashOperator(
     task_id="bash_use_variable_good",
@@ -183,6 +184,7 @@ bash_use_variable_good = BashOperator(
     env={"foo_env": "{{ var.value.get('foo') }}"},
 )
 ```
+{% endraw %}
 
 jinja template을 사용하는 경우 task execution할 때까지 variable을 조회하지 않으므로 부하를 줄일 수 있습니다.
 
