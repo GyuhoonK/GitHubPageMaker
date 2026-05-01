@@ -1,0 +1,19 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Jekyll: Serve (drafts + livereload)",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "bundle exec jekyll serve --livereload --drafts",
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "name": "Jekyll: Build",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "bundle exec jekyll build",
+      "cwd": "${workspaceFolder}"
+    }
+  ]
+}
